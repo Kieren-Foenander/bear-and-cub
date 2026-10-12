@@ -111,7 +111,7 @@ export class Menus {
       this.map,
       `<div class="map-title">Where shall we go?</div>
        <div class="cards">${cards}</div>
-       <div class="menu-hint">◀ ▶ choose &nbsp; ${buttonHtml("a", style)} let's go!</div>`
+       <div class="menu-hint">${unlocked(selected) ? `◀ ▶ choose &nbsp; ${buttonHtml("a", style)} let's go!` : "🔒 Finish the one before to open this one!"}</div>`
     )
   }
 

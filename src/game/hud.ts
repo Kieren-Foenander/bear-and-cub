@@ -59,6 +59,7 @@ export class GameHud {
     this.toastTimer -= dt
     if (this.toastTimer <= 0) this.toastEl.classList.remove("show")
     this.layer.classList.toggle("hidden", !state.visible)
+    this.toastEl.style.visibility = state.visible ? "" : "hidden"
 
     const players = JSON.stringify([state.twoPlayer, state.active, state.mamaStyle])
     if (players !== this.lastPlayers) {
