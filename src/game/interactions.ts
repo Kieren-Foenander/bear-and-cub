@@ -1,10 +1,11 @@
 import * as THREE from "three"
 import type { Button, PadState } from "../services/Input.ts"
+import type { Glyph } from "./prompts.ts"
 import type { Bear, BearId } from "./bear.ts"
 
 /** What a prompt shows right now. */
 export interface PromptView {
-  readonly buttons: ReadonlyArray<Button>
+  readonly buttons: ReadonlyArray<Glyph>
   readonly label: string
   /** Flash the prompt: "press it NOW!" */
   readonly now?: boolean

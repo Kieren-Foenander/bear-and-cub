@@ -211,7 +211,9 @@ export class Drawbridge {
     readonly length: number,
     private readonly yaw: number,
     private readonly onLanded: () => void = () => {},
-    readonly width = 3.2
+    readonly width = 3.2,
+    /** Resting angle once lowered: 0 = flat, positive = slopes down away from the hinge (a ramp). */
+    private readonly finalAngle = 0
   ) {
     const plankMaterials = [flat("#a0683c"), flat("#8d5a32")]
     const planks = Math.round(length / 0.6)
@@ -243,9 +245,9 @@ export class Drawbridge {
 
   update(dt: number) {
     if (!this.lowering || this.down) return
-    this.angle = Math.min(0, this.angle + dt * 0.9)
+    this.angle = Math.min(this.finalAngle, this.angle + dt * 0.9)
     this.hinge.rotation.x = this.angle
-    if (this.angle === 0) {
+    if (this.angle === this.finalAngle) {
       this.down = true
       this.addColliders()
       this.onLanded()
@@ -254,7 +256,7 @@ export class Drawbridge {
 
   private addColliders() {
     const { rapier, world } = this.env
-    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw)
+    const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(this.finalAngle, this.yaw, 0, "YXZ"))
     const local = (x: number, y: number, z: number) =>
       new THREE.Vector3(x, y, z).applyQuaternion(rotation).add(this.hinge.position)
     const box = (hx: number, hy: number, hz: number, at: THREE.Vector3) =>
@@ -268,7 +270,102 @@ export class Drawbridge {
   /** The far end of the lowered bridge, on the deck. */
   get tip() {
     return new THREE.Vector3(0, 0.2, this.length)
-      .applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw)
+      .applyEuler(new THREE.Euler(this.finalAngle, this.yaw, 0, "YXZ"))
       .add(this.hinge.position)
+  }
+}
+
+/**
+ * A tall dead tree that topples over when pushed, landing as a log bridge.
+ * It falls in the direction of `yaw` (0 = towards +Z).
+ */
+export class FallingTree {
+  readonly pivot = new THREE.Group()
+  private angle = 0
+  private speed = 0
+  private wobble = 0
+  private readonly collider: RAPIER.Collider
+  falling = false
+  down = false
+
+  constructor(
+    private readonly env: Env,
+    base: THREE.Vector3,
+    readonly length: number,
+    private readonly yaw: number,
+    private readonly onLanded: () => void = () => {},
+    private readonly radius = 0.75
+  ) {
+    const bark = flat("#7a5634")
+    const trunk = mesh(jitter(new THREE.CylinderGeometry(radius * 0.8, radius, length, 8, 4), 0.05), bark)
+    trunk.position.y = length / 2
+    this.pivot.add(trunk)
+    for (let i = 0; i < 4; i++) {
+      const branch = mesh(new THREE.CylinderGeometry(0.1, 0.16, 1.8, 5), bark)
+      const a = (i / 4) * Math.PI * 2 + 0.4
+      branch.position.set(Math.cos(a) * 0.6, length * (0.6 + i * 0.1), Math.sin(a) * 0.6)
+      branch.rotation.set(Math.sin(a) * 0.8, 0, -Math.cos(a) * 0.8)
+      this.pivot.add(branch)
+    }
+    this.pivot.position.copy(base).add(new THREE.Vector3(0, radius * 0.8, 0))
+    this.pivot.rotation.order = "YXZ"
+    this.pivot.rotation.y = yaw
+    env.scene.add(this.pivot)
+    this.collider = env.world.createCollider(
+      env.rapier.ColliderDesc.cylinder(length / 2, radius).setTranslation(base.x, base.y + length / 2, base.z)
+    )
+  }
+
+
+  /** A little shove (shows progress before it goes). */
+  nudge() {
+    this.wobble = 1
+  }
+
+  fall() {
+    this.falling = true
+    this.env.world.removeCollider(this.collider, true)
+  }
+
+  update(dt: number) {
+    this.wobble = Math.max(0, this.wobble - dt * 3)
+    if (!this.falling) {
+      this.pivot.rotation.x = Math.sin(this.wobble * 12) * this.wobble * 0.06
+      return
+    }
+    if (this.down) return
+    // Topple: starts slow, speeds up like a real falling tree.
+    this.speed += dt * 3.2
+    this.angle = Math.min(Math.PI / 2, this.angle + this.speed * dt)
+    this.pivot.rotation.x = this.angle
+    if (this.angle >= Math.PI / 2) {
+      this.down = true
+      this.addColliders()
+      this.onLanded()
+    }
+  }
+
+  private addColliders() {
+    const { rapier, world } = this.env
+    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw)
+    const local = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z).applyQuaternion(rotation).add(this.pivot.position)
+    const box = (hx: number, hy: number, hz: number, at: THREE.Vector3) =>
+      world.createCollider(rapier.ColliderDesc.cuboid(hx, hy, hz).setTranslation(at.x, at.y, at.z).setRotation(rotation))
+    box(this.radius, this.radius * 0.7, this.length / 2, local(0, 0, this.length / 2))
+    // Gentle slopes at each end so bears can walk up onto the log.
+    const top = this.radius * 0.7 + this.radius * 0.8
+    const run = 2.4
+    const slope = Math.atan2(top, run)
+    const rampLength = Math.hypot(top, run)
+    for (const [z, dir] of [[this.length, 1], [0, -1]] as const) {
+      const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(dir * slope, this.yaw, 0, "YXZ"))
+      const center = local(0, top / 2 - this.radius * 0.8 - 0.1, z + (dir * run) / 2)
+      world.createCollider(
+        rapier.ColliderDesc.cuboid(this.radius, 0.1, rampLength / 2).setTranslation(center.x, center.y, center.z).setRotation(tilt)
+      )
+    }
+    // Invisible rails so a careful bear doesn't slip off the log.
+    box(0.1, 1.2, this.length / 2 - 1, local(-this.radius - 0.15, 1, this.length / 2))
+    box(0.1, 1.2, this.length / 2 - 1, local(this.radius + 0.15, 1, this.length / 2))
   }
 }

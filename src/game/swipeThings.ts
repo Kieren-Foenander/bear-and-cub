@@ -218,3 +218,88 @@ export class AppleTree {
     }
   }
 }
+
+/**
+ * A pinecone hanging from a branch on a rope. Swipe it at the top of a jump and it drops,
+ * pulling whatever the rope was holding (a ramp, a gate...).
+ */
+export class HangingPinecone {
+  private readonly cone: THREE.Group
+  private readonly rope: THREE.Mesh
+  private dropped = false
+  private velocity = 0
+  private readonly ground: number
+  private readonly material = new THREE.MeshStandardMaterial({ color: "#9a6a3a", flatShading: true, emissive: "#ffcf3f", emissiveIntensity: 0 })
+
+  constructor(
+    ctx: SwipeThingContext,
+    at: THREE.Vector3,
+    onDrop: () => void,
+    lift = 1.6
+  ) {
+    const { scene, rapier, world, swipes } = ctx
+    const ground = at.y
+    const target = new THREE.Vector3(at.x, ground + hangHeight(CUB, lift), at.z)
+    const armY = ground + 3.4
+
+    const wood = flat("#8a5a36")
+    const post = mesh(new THREE.BoxGeometry(0.3, 3.6, 0.3), wood)
+    post.position.set(at.x - 1.4, ground + 1.8, at.z)
+    scene.add(post)
+    world.createCollider(rapier.ColliderDesc.cuboid(0.15, 1.8, 0.15).setTranslation(at.x - 1.4, ground + 1.8, at.z))
+    const arm = mesh(new THREE.BoxGeometry(1.8, 0.22, 0.22), wood)
+    arm.position.set(at.x - 0.6, armY, at.z)
+    scene.add(arm)
+
+    const ropeLength = armY - target.y - 0.3
+    this.rope = mesh(new THREE.CylinderGeometry(0.04, 0.04, ropeLength, 4), flat("#d8c49a"), { castShadow: false })
+    this.rope.position.set(at.x, armY - ropeLength / 2, at.z)
+    scene.add(this.rope)
+
+    this.cone = new THREE.Group()
+    for (let i = 0; i < 4; i++) {
+      const scale = 0.42 - i * 0.07
+      const layer = mesh(new THREE.ConeGeometry(scale, 0.3, 7), this.material)
+      layer.position.y = -i * 0.18
+      layer.rotation.x = Math.PI
+      this.cone.add(layer)
+    }
+    this.cone.position.copy(target).add(new THREE.Vector3(0, 0.25, 0))
+    scene.add(this.cone)
+
+    swipes.add(
+      {
+        id: `pinecone-${at.x.toFixed(1)}-${at.z.toFixed(1)}`,
+        who: ["cub"],
+        position: () => target,
+        horizontalReach: 1.1,
+        verticalReach: 0.38,
+        enabled: () => !this.dropped,
+        onHit: () => {
+          this.dropped = true
+          this.rope.visible = false
+          ctx.sound("pop")
+          ctx.particles.burst(target, { colors: ["#c9a46a", "#fff36b"], count: 16, speed: 3, up: 1 })
+          onDrop()
+        },
+        glow: (amount) => {
+          this.material.emissiveIntensity = damp(this.material.emissiveIntensity, amount * 0.7, 12, 1 / 60)
+        }
+      },
+      { who: "cub" }
+    )
+    this.ground = ground
+  }
+
+  update(dt: number) {
+    if (!this.dropped) {
+      this.cone.rotation.z = Math.sin(performance.now() / 600) * 0.08
+      return
+    }
+    if (this.cone.position.y > this.ground + 0.3) {
+      this.velocity -= GRAVITY * dt
+      this.cone.position.y = Math.max(this.ground + 0.3, this.cone.position.y + this.velocity * dt)
+      this.cone.rotation.x += dt * 6
+    }
+  }
+}

@@ -20,6 +20,8 @@ export interface TerrainDef {
   readonly waterColor?: THREE.ColorRepresentation
   readonly grass?: ReadonlyArray<THREE.ColorRepresentation>
   readonly hill?: THREE.ColorRepresentation
+  /** Triangle size in metres. Smaller = crisper edges (e.g. creek banks you jump across). */
+  readonly cell?: number
 }
 
 /** Hills around the edge of a level so nobody wanders off the map. */
@@ -51,7 +53,7 @@ export class Terrain {
     const { minX, maxX, minZ, maxZ } = def.bounds
     const width = maxX - minX
     const depth = maxZ - minZ
-    const cell = 1.4
+    const cell = def.cell ?? 1.4
     const geometry = new THREE.PlaneGeometry(width, depth, Math.round(width / cell), Math.round(depth / cell))
     geometry.rotateX(-Math.PI / 2)
     geometry.translate((minX + maxX) / 2, 0, (minZ + maxZ) / 2)

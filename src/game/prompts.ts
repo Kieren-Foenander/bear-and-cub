@@ -2,14 +2,18 @@ import * as THREE from "three"
 import type { Button, ButtonStyle } from "../services/Input.ts"
 import type { ActivePrompt } from "./interactions.ts"
 
-const GLYPHS: Record<ButtonStyle, Record<Button, { text: string; color: string }>> = {
+/** Prompts can show real buttons, or "move the stick". */
+export type Glyph = Button | "move"
+
+const GLYPHS: Record<ButtonStyle, Record<Glyph, { text: string; color: string }>> = {
   xbox: {
     a: { text: "A", color: "#3fbf4f" },
     b: { text: "B", color: "#e5484d" },
     x: { text: "X", color: "#3b82f6" },
     y: { text: "Y", color: "#f5c518" },
     swap: { text: "⧉", color: "#666" },
-    start: { text: "☰", color: "#666" }
+    start: { text: "☰", color: "#666" },
+    move: { text: "🕹️", color: "#5d6b7a" }
   },
   playstation: {
     a: { text: "✕", color: "#5b8def" },
@@ -17,7 +21,8 @@ const GLYPHS: Record<ButtonStyle, Record<Button, { text: string; color: string }
     x: { text: "□", color: "#e46fbe" },
     y: { text: "△", color: "#2fbf9f" },
     swap: { text: "⧉", color: "#666" },
-    start: { text: "☰", color: "#666" }
+    start: { text: "☰", color: "#666" },
+    move: { text: "🕹️", color: "#5d6b7a" }
   },
   keyboard: {
     a: { text: "Space", color: "#3fbf4f" },
@@ -25,13 +30,14 @@ const GLYPHS: Record<ButtonStyle, Record<Button, { text: string; color: string }
     x: { text: "Q", color: "#3b82f6" },
     y: { text: "R", color: "#f5c518" },
     swap: { text: "Tab", color: "#666" },
-    start: { text: "Enter", color: "#666" }
+    start: { text: "Enter", color: "#666" },
+    move: { text: "WASD", color: "#5d6b7a" }
   }
 }
 
-export const buttonHtml = (button: Button, style: ButtonStyle) => {
+export const buttonHtml = (button: Glyph, style: ButtonStyle) => {
   const glyph = GLYPHS[style][button]
-  const wide = glyph.text.length > 1 ? " wide" : ""
+  const wide = style === "keyboard" && glyph.text.length > 1 ? " wide" : ""
   return `<span class="btn${wide}" style="--btn:${glyph.color}">${glyph.text}</span>`
 }
 
