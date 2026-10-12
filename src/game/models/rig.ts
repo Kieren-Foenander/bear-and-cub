@@ -4,6 +4,7 @@ import { batchStaticParts, line, material, part, pebble } from "./shapes.ts"
 
 /** All animation pivots are separate from the game-owned root transform. */
 export class BearRig {
+  readonly tumble = new THREE.Group()
   readonly motion = new THREE.Group()
   readonly head = new THREE.Group()
   readonly jaw = new THREE.Group()
@@ -12,6 +13,7 @@ export class BearRig {
   readonly ears: THREE.Group[] = []
   readonly legs: THREE.Group[] = []
   readonly knees: THREE.Group[] = []
+  readonly hipHeights: number[] = []
   readonly tail = new THREE.Group()
   readonly scarfTail = new THREE.Group()
   readonly cub: boolean
@@ -28,9 +30,12 @@ export class BearRig {
     eyeSurface.roughness = 0.28
     const white = material("#fff6e5")
     const tongue = material("#f398a7")
-    root.add(this.motion)
+    // Flight rolls around the body centre, keeping the game root at the feet.
+    this.tumble.position.set(0, 0.95, -0.15)
+    root.add(this.tumble)
+    this.tumble.add(this.motion)
     this.motion.name = "rear-foot-pivot"
-    this.motion.position.set(0, 0.12, -0.65)
+    this.motion.position.set(0, -0.83, -0.5)
     const body = new THREE.Group()
     body.position.set(0, -0.12, 0.65)
     this.motion.add(body)
@@ -135,20 +140,22 @@ export class BearRig {
       const front = i < 2
       const hip = new THREE.Group()
       hip.name = `${front ? "front" : "hind"}-${side < 0 ? "left" : "right"}`
-      const hipY = cub ? 0.52 : 0.62
+      const hipY = front ? (cub ? 0.84 : 0.98) : (cub ? 0.52 : 0.62)
+      const kneeLength = front ? (cub ? 0.49 : 0.6) : (cub ? 0.27 : 0.35)
+      this.hipHeights.push(hipY)
       hip.position.set(side * (cub ? 0.43 : 0.47), hipY, front ? 0.49 : -0.66)
       body.add(hip)
       this.legs.push(hip)
-      part(hip, pebble(front ? 0.225 : 0.26, cub ? 0.26 : 0.31, 0.245, 0.8), fur, 0, -0.12, 0)
+      part(hip, pebble(front ? 0.225 : 0.26, front ? (cub ? 0.3 : 0.38) : (cub ? 0.26 : 0.31), 0.245, 0.8), fur, 0, front ? -0.25 : -0.12, 0)
       const knee = new THREE.Group()
-      knee.position.set(0, cub ? -0.27 : -0.35, 0)
+      knee.position.set(0, -kneeLength, 0)
       hip.add(knee)
       this.knees.push(knee)
-      part(knee, pebble(0.19, 0.19, 0.19, 0.65), fur, 0, -0.08, 0.015)
+      part(knee, pebble(0.19, front ? (cub ? 0.19 : 0.21) : (cub ? 0.17 : 0.19), 0.19, 0.65), fur, 0, front ? (cub ? -0.14 : -0.16) : -0.08, 0.015)
       part(knee, pebble(cub ? 0.22 : 0.235, 0.14, 0.285, 0.7), fur,
-        0, -(hipY - (cub ? 0.27 : 0.35) - 0.14), 0.068, "round paw")
+        0, -(hipY - kneeLength - 0.14), 0.068, "round paw")
       // Sole pads show when kicking/swiping; no claws on these friendly bears.
-      const pawY = -(hipY - (cub ? 0.27 : 0.35))
+      const pawY = -(hipY - kneeLength)
       part(knee, pebble(0.12, 0.018, 0.14), shade, 0, pawY + 0.02, 0.078)
       for (const toe of [-1, 0, 1]) {
         part(knee, pebble(0.026, 0.041, 0.009), cream, toe * 0.075, pawY + 0.16, 0.309)

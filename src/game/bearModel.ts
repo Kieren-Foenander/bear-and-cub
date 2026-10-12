@@ -46,6 +46,11 @@ export class BearModel {
   private readonly rig: BearRig
   private readonly target = new Float64Array(P.Count)
   private readonly pose = new Float64Array(P.Count)
+  private readonly flightAxis = new THREE.Vector3(0, 0, 1)
+  private readonly flightRotation = new THREE.Quaternion()
+  private readonly restRotation = new THREE.Quaternion()
+  private flightAngle = 0
+  private wasFlying = false
   private time = 0
   private phase = 0
   private idleTime = 0
@@ -101,6 +106,12 @@ export class BearModel {
     this.sit = mix(this.sit, smooth((this.idleTime - 8) / 1.2), 1 - Math.exp(-dt * 5))
     this.carried = mix(this.carried, state.carried ? 1 : 0, response)
     this.flying = mix(this.flying, state.flying ? 1 : 0, response)
+    if (state.flying && !this.wasFlying) this.flightAngle = 0
+    if (state.flying) this.flightAngle = (this.flightAngle + dt * 3.6) % (Math.PI * 2)
+    this.wasFlying = state.flying
+    this.flightRotation.setFromAxisAngle(this.flightAxis, this.flightAngle)
+      .slerp(this.restRotation, 1 - this.flying)
+    this.rig.tumble.quaternion.slerp(this.flightRotation, response)
     this.air = mix(this.air, !state.grounded && !state.carried ? 1 : 0, response)
     this.stretch = mix(this.stretch, clamp01(state.verticalVelocity / 7) * this.air, response)
     this.squash = mix(this.squash, this.squashTarget, 1 - Math.exp(-dt * 32))
@@ -168,7 +179,8 @@ export class BearModel {
 
     // Sitting: hind paws scoot forward while front paws rest in a relaxed pose.
     const sitting = Math.max(this.sit, this.carried)
-    p[P.Y] -= sitting * 0.1
+    p[P.Y] -= sitting * (this.rig.cub ? 0.074 : 0.11)
+    p[P.Y] -= this.carried * 0.28
     p[P.Z] -= sitting * 0.16
     p[P.Pitch] = mix(p[P.Pitch]!, -0.45, sitting)
     p[P.HeadPitch] += sitting * 0.4
@@ -176,7 +188,7 @@ export class BearModel {
       const front = i < 2
       p[P.FrontLeft + i] = mix(p[P.FrontLeft + i]!, front ? -0.13 : -0.55, sitting)
       p[P.KneeFrontLeft + i] = mix(p[P.KneeFrontLeft + i]!, front ? 0.16 : 0.15, sitting)
-      p[P.SplayFrontLeft + i] = sitting * (i % 2 === 0 ? -1 : 1) * (front ? 0.16 : 0.24)
+      p[P.SplayFrontLeft + i] = sitting * (i % 2 === 0 ? -1 : 1) * (front ? 0.16 : 0.24) + this.carried * (i % 2 === 0 ? -1 : 1) * 0.5
     }
     p[P.HeadYaw] += this.carried * Math.sin(t * 1.3) * 0.25
     p[P.HeadRoll] += this.carried * Math.sin(t * 1.7) * 0.075
@@ -192,8 +204,8 @@ export class BearModel {
 
     const flight = this.flying
     p[P.Y] += flight * 0.15
-    p[P.Pitch] = mix(p[P.Pitch]!, -0.4 + Math.sin(t * 4) * 0.9, flight)
-    p[P.Roll] += flight * Math.sin(t * 4.5) * 0.7
+    p[P.Pitch] = mix(p[P.Pitch]!, -0.3 + Math.sin(t * 4) * 0.25, flight)
+    p[P.Roll] += flight * Math.sin(t * 4.5) * 0.12
     p[P.HeadPitch] = mix(p[P.HeadPitch]!, -0.14, flight)
     p[P.HeadRoll] += flight * Math.sin(t * 5) * 0.1
     p[P.Mouth] = Math.max(p[P.Mouth]!, flight * 0.65)
@@ -221,9 +233,10 @@ export class BearModel {
     // A fast anticipation then a high, forward paw arc, readable in midair.
     const swipe = envelope(this.swipeTime, 0.36, 0.055, 0.12)
     const swipeArc = smooth((this.swipeTime - 0.035) / 0.1)
-    p[P.FrontRight] = mix(p[P.FrontRight]!, mix(0.35, -2.65, swipeArc), swipe)
+    p[P.FrontRight] = mix(p[P.FrontRight]!, mix(0.35, -2.85, swipeArc), swipe)
     p[P.KneeFrontRight] = mix(p[P.KneeFrontRight]!, -0.08, swipe)
     p[P.SplayFrontRight] = mix(p[P.SplayFrontRight]!, 0.17, swipe)
+    p[P.LiftFrontRight] += swipe * (this.rig.cub ? 0.35 : 0.18)
     p[P.HeadPitch] -= swipe * 0.18
     p[P.Roll] -= swipe * 0.08
 
@@ -248,8 +261,8 @@ export class BearModel {
   private applyPose(): void {
     const p = this.pose
     const rig = this.rig
-    rig.motion.position.y = 0.12 + p[P.Y]!
-    rig.motion.position.z = -0.65 + p[P.Z]!
+    rig.motion.position.y = -0.83 + p[P.Y]!
+    rig.motion.position.z = -0.5 + p[P.Z]!
     rig.motion.rotation.set(p[P.Pitch]!, p[P.Yaw]!, p[P.Roll]!)
     rig.motion.scale.set(p[P.ScaleX]!, p[P.ScaleY]!, p[P.ScaleZ]!)
     rig.head.rotation.set(p[P.HeadPitch]!, p[P.HeadYaw]!, p[P.HeadRoll]!)
@@ -264,7 +277,7 @@ export class BearModel {
     rig.scarfTail.rotation.x = p[P.Scarf]!
     for (let i = 0; i < 4; i++) {
       rig.legs[i]!.rotation.set(p[P.FrontLeft + i]!, 0, p[P.SplayFrontLeft + i]!)
-      rig.legs[i]!.position.y = (rig.cub ? 0.52 : 0.62) + p[P.LiftFrontLeft + i]!
+      rig.legs[i]!.position.y = rig.hipHeights[i]! + p[P.LiftFrontLeft + i]!
       rig.knees[i]!.rotation.x = p[P.KneeFrontLeft + i]!
     }
   }
