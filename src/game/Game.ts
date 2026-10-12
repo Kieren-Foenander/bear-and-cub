@@ -1,6 +1,7 @@
 import { Effect, Layer } from "effect"
 import { Hud } from "../services/Hud.ts"
 import { type ButtonStyle, Input } from "../services/Input.ts"
+import { Music } from "../services/Music.ts"
 import { Physics } from "../services/Physics.ts"
 import { Renderer } from "../services/Renderer.ts"
 import { type Progress, recordResult, Save } from "../services/Save.ts"
@@ -44,6 +45,7 @@ class Session {
     private readonly physics: Physics["Service"],
     private readonly input: Input["Service"],
     private readonly sound: Sound["Service"],
+    private readonly music: Music["Service"],
     private readonly save: Save["Service"],
     hudRoot: HTMLElement
   ) {
@@ -63,6 +65,7 @@ class Session {
       this.mapSelected = this.levelIndex
       this.stage = this.makeStage(this.levelIndex)
     }
+    this.music.play(this.screen === "playing" ? this.stage.def.id : "menu")
   }
 
   private makeStage(index: number) {
@@ -143,6 +146,7 @@ class Session {
   private padCount = 0
 
   frame(dt: number) {
+    const wasComplete = this.stage.completeTime >= 0
     this.input.poll()
     const devices = this.input.devices()
     // Let everyone know when a controller joins or leaves.
@@ -169,6 +173,8 @@ class Session {
       this.menu(dt, style)
     }
 
+    if (!wasComplete && this.stage.completeTime >= 0) this.music.celebrate()
+    this.music.play(this.screen === "playing" ? this.stage.def.id : "menu")
     const stage = this.stage
     const playing = this.screen === "playing"
     this.hud.update(dt, {
@@ -330,11 +336,12 @@ export const GameLive = Layer.effectDiscard(
     const physics = yield* Physics
     const input = yield* Input
     const sound = yield* Sound
+    const music = yield* Music
     const save = yield* Save
     const hud = yield* Hud
 
     const session = yield* Effect.acquireRelease(
-      Effect.sync(() => new Session(renderer, physics, input, sound, save, hud.root)),
+      Effect.sync(() => new Session(renderer, physics, input, sound, music, save, hud.root)),
       (session) => Effect.sync(() => session.stage.dispose())
     )
     // Handy for poking at the game from the browser console while developing.
