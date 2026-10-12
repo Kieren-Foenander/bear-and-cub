@@ -21,6 +21,8 @@ export interface StageApi extends Env {
   readonly mama: Bear
   readonly cub: Bear
   readonly sound: (name: SoundName) => void
+  /** A tuned bell note (pentatonic index). */
+  readonly bellNote: (index: number) => void
   readonly toast: (text: string) => void
   readonly shake: (amount: number) => void
   /** The honey pot at the end. The level is complete when both bears reach it (once `open` says so). */
@@ -50,6 +52,10 @@ export interface LevelDef {
   /** The controller skill this level teaches, shown on the map. */
   readonly teaches: string
   readonly emoji: string
+  /** Opens once this level is done (default: the one before it on the map). */
+  readonly unlockAfter?: string
+  /** Finishing this level rolls the credits. */
+  readonly finale?: boolean
   readonly sky?: { readonly color: THREE.ColorRepresentation; readonly fog: THREE.ColorRepresentation }
   readonly terrain: TerrainDef
   /** Ground positions (y is ignored). */

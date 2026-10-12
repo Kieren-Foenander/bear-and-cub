@@ -10,6 +10,8 @@ import { damp, flat, mesh } from "./util.ts"
 
 export interface SwipeThingContext extends Env {
   readonly swipes: Swipes
+  /** Play a tuned bell (for musical bells). */
+  readonly bellNote?: (index: number) => void
   readonly particles: Particles
   readonly sound: (name: SoundName) => void
 }
@@ -33,7 +35,17 @@ export class Bell {
   private postsAlong: "x" | "z" = "x"
 
   /** `postsAlong` is the axis the two posts sit on; walk in along the other axis. */
-  constructor(ctx: SwipeThingContext, at: THREE.Vector3, onFirstRing: () => void, postsAlong: "x" | "z" = "x") {
+  constructor(
+    ctx: SwipeThingContext,
+    at: THREE.Vector3,
+    onFirstRing: () => void,
+    postsAlong: "x" | "z" = "x",
+    options: { note?: number; color?: THREE.ColorRepresentation; id?: string; coach?: boolean } = {}
+  ) {
+    if (options.color !== undefined) {
+      this.material.color.set(options.color)
+      this.material.emissive.set(options.color)
+    }
     const { scene, rapier, world, swipes } = ctx
     const ground = ctx.terrain.heightAt(at.x, at.z)
     const target = new THREE.Vector3(at.x, ground + hangHeight(CUB, 1.65), at.z)
@@ -77,7 +89,7 @@ export class Bell {
 
     swipes.add(
       {
-        id: "bell",
+        id: options.id ?? "bell",
         who: ["cub"],
         position: () => target,
         horizontalReach: 1.1,
@@ -85,7 +97,8 @@ export class Bell {
         enabled: () => true,
         onHit: (bear: Bear) => {
           this.swingSpeed += bear.forward.x >= 0 ? 4 : -4
-          ctx.sound("bell")
+          if (options.note !== undefined && ctx.bellNote) ctx.bellNote(options.note)
+          else ctx.sound("bell")
           ctx.particles.burst(target, { colors: ["#ffe066", "#ffffff"], count: 16, speed: 4, up: 1, gravity: 0.1 })
           if (!this.rung) {
             this.rung = true
@@ -96,7 +109,7 @@ export class Bell {
           this.material.emissiveIntensity = damp(this.material.emissiveIntensity, amount * 0.8, 12, 1 / 60)
         }
       },
-      { who: "cub", enabled: () => !this.rung }
+      options.coach === false ? undefined : { who: "cub", enabled: () => !this.rung }
     )
   }
 

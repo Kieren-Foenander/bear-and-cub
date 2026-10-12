@@ -30,6 +30,8 @@ export class Sound extends Context.Service<Sound, {
   readonly play: (name: SoundName) => void
   /** Plays the nth note of a pentatonic scale, used for flowers. */
   readonly note: (index: number) => void
+  /** A bell tuned to the nth pentatonic note (musical bells in the playground). */
+  readonly bell: (index: number) => void
   /** Browsers only allow audio after a click or key press. */
   readonly unlock: () => void
   readonly isLocked: () => boolean
@@ -169,9 +171,16 @@ export class Sound extends Context.Service<Sound, {
         })
       }
 
+      const bell = (index: number) => {
+        if (ctx.state !== "running") return
+        const base = PENTATONIC[((index % PENTATONIC.length) + PENTATONIC.length) % PENTATONIC.length]! / 2
+        ;[1, 2.76, 5.4].forEach((ratio, i) => tone(base * ratio, { type: "sine", duration: 1.6 - i * 0.4, volume: 0.4 / (i + 1) }))
+      }
+
       return Sound.of({
         play,
         note,
+        bell,
         unlock: () => void ctx.resume(),
         isLocked: () => ctx.state !== "running"
       })

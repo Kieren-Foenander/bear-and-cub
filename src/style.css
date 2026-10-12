@@ -64,8 +64,8 @@ body {
 
 .cards {
   display: flex;
-  gap: 18px;
-  padding: 24px;
+  gap: clamp(10px, 1.4vw, 18px);
+  padding: 24px 32px;
   max-width: 100vw;
   overflow: visible;
   justify-content: center;
@@ -74,7 +74,7 @@ body {
 
 .card {
   position: relative;
-  width: 190px;
+  width: clamp(130px, 13.5vw, 190px);
   padding: 16px 12px 12px;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.85);

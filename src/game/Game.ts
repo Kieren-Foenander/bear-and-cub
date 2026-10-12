@@ -84,8 +84,10 @@ class Session {
     return index === -1 ? 0 : index
   }
 
-  private unlocked = (index: number) =>
-    this.unlockAll || index === 0 || this.progress.levels[LEVELS[index - 1]!.id]?.done === true
+  private unlocked = (index: number) => {
+    const after = LEVELS[index]!.unlockAfter ?? LEVELS[index - 1]?.id
+    return this.unlockAll || after === undefined || this.progress.levels[after]?.done === true
+  }
 
   private loadLevel(index: number) {
     this.stage.dispose()
@@ -222,14 +224,14 @@ class Session {
         return
       }
       case "complete": {
-        const last = this.levelIndex === LEVELS.length - 1
+        const last = LEVELS[this.levelIndex]!.finale === true
         this.menus.showComplete(LEVELS[this.levelIndex]!, this.lastStats!, last, style)
         if (nav.confirm) {
           this.sound.play("pickup")
           if (last) {
             this.screen = "credits"
           } else {
-            this.mapSelected = this.levelIndex + 1
+            this.mapSelected = Math.min(LEVELS.length - 1, this.levelIndex + 1)
             this.screen = "map"
           }
         }

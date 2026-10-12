@@ -62,6 +62,7 @@ export const mountain: LevelDef = {
   title: "Honey Mountain",
   teaches: "Everything together — the big climb!",
   emoji: "🍯",
+  finale: true,
   sky: { color: "#ffd9a8", fog: "#ffe8cc" },
   spawn: { mama: [-1.5, 33], cub: [1.5, 32] },
   terrain: {

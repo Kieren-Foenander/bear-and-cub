@@ -136,6 +136,7 @@ export class Stage {
       mama: this.mama,
       cub: this.cub,
       sound: play,
+      bellNote: (index) => sound.bell(index),
       toast: services.toast,
       shake: (amount) => {
         this.cameraRig.shake(amount)
