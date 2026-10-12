@@ -581,3 +581,30 @@ body {
     transform: scale(1);
   }
 }
+
+/* ---------- How to play ---------- */
+
+.help-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 18px 30px;
+  border-radius: 26px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.help-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.help-buttons {
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 26px;
+}

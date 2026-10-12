@@ -12,9 +12,9 @@ import { type LevelStats, MenuNav, Menus } from "./menus.ts"
 import { Prompts } from "./prompts.ts"
 import { Stage } from "./stage.ts"
 
-type Screen = "title" | "map" | "playing" | "paused" | "complete" | "credits"
+type Screen = "title" | "map" | "playing" | "paused" | "help" | "complete" | "credits"
 
-const PAUSE_ITEMS = ["Keep playing", "Start level again", "Back to the map"] as const
+const PAUSE_ITEMS = ["Keep playing", "How to play", "Start level again", "Back to the map"] as const
 /** How long to enjoy the celebration before the "You did it!" card. */
 const CELEBRATE_TIME = 3
 
@@ -180,7 +180,7 @@ class Session {
   private menu(dt: number, style: ButtonStyle) {
     const nav = this.nav.read(this.input.devices(), dt)
     // Keep the world gently alive behind the menus (no input reaches the bears).
-    if (this.screen !== "paused") this.stage.update(dt, null)
+    if (this.screen !== "paused" && this.screen !== "help") this.stage.update(dt, null)
 
     switch (this.screen) {
       case "title": {
@@ -216,11 +216,18 @@ class Session {
           this.screen = "playing"
           this.menus.hide()
         } else if (nav.confirm && this.pauseSelected === 1) {
-          this.loadLevel(this.levelIndex)
+          this.screen = "help"
         } else if (nav.confirm && this.pauseSelected === 2) {
+          this.loadLevel(this.levelIndex)
+        } else if (nav.confirm && this.pauseSelected === 3) {
           this.mapSelected = this.levelIndex
           this.screen = "map"
         }
+        return
+      }
+      case "help": {
+        this.menus.showHelp(style)
+        if (nav.confirm || nav.back || nav.start) this.screen = "paused"
         return
       }
       case "complete": {

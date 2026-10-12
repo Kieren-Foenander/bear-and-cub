@@ -56,14 +56,15 @@ export class Menus {
   private readonly pause = el("screen pause-screen")
   private readonly complete = el("screen complete-screen")
   private readonly credits = el("screen credits-screen")
+  private readonly help = el("screen help-screen")
 
   constructor(root: HTMLElement) {
-    root.append(this.title, this.map, this.pause, this.complete, this.credits)
+    root.append(this.title, this.map, this.pause, this.complete, this.credits, this.help)
     this.hide()
   }
 
   hide() {
-    for (const screen of [this.title, this.map, this.pause, this.complete, this.credits]) screen.classList.remove("show")
+    for (const screen of [this.title, this.map, this.pause, this.complete, this.credits, this.help]) screen.classList.remove("show")
   }
 
   private show(screen: HTMLElement, html: string) {
@@ -137,6 +138,25 @@ export class Menus {
          <div>🦋 ${stats.butterflies} / ${stats.butterfliesTotal}${butterflyStars}</div>
        </div>
        <div class="menu-hint">${buttonHtml("a", style)} ${last ? "the end…" : "next adventure"}</div>`
+    )
+  }
+
+  showHelp(style: ButtonStyle) {
+    const b = (button: Parameters<typeof buttonHtml>[0]) => buttonHtml(button, style)
+    const row = (buttons: string, what: string) => `<div class="help-row"><div class="help-buttons">${buttons}</div><div>${what}</div></div>`
+    this.show(
+      this.help,
+      `<div class="menu-title">How to play</div>
+       <div class="help-card">
+         ${row(b("move"), "Walk and run")}
+         ${row(b("a"), "Jump")}
+         ${row(b("b"), "Do things: push, boop, pick up… or roar!")}
+         ${row(b("x"), "Swipe (best at the top of a jump)")}
+         ${row(b("y"), "Mama: throw Cub, or call Cub back")}
+         ${row(b("swap"), "One controller? Switch bears")}
+         ${row(`${b("b")} + ${b("b")}`, "Roar together, close up, for a bear hug ❤️")}
+       </div>
+       <div class="menu-hint">${b("a")} back</div>`
     )
   }
 
