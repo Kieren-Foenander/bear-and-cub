@@ -3,7 +3,6 @@ import * as THREE from "three"
 
 export class Renderer extends Context.Service<Renderer, {
   readonly renderer: THREE.WebGLRenderer
-  readonly scene: THREE.Scene
   readonly camera: THREE.PerspectiveCamera
 }>()("bears/services/Renderer") {
   static readonly layer = Layer.effect(
@@ -29,7 +28,6 @@ export class Renderer extends Context.Service<Renderer, {
           })
       )
 
-      const scene = new THREE.Scene()
       const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 400)
 
       const onResize = () => {
@@ -42,7 +40,7 @@ export class Renderer extends Context.Service<Renderer, {
         () => Effect.sync(() => window.removeEventListener("resize", onResize))
       )
 
-      return Renderer.of({ renderer, scene, camera })
+      return Renderer.of({ renderer, camera })
     })
   )
 }

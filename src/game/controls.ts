@@ -7,6 +7,8 @@ export interface Routed {
   readonly mamaStyle: ButtonStyle
   readonly cubStyle: ButtonStyle
   readonly twoPlayer: boolean
+  /** Which bear the shared controller / keyboard is driving. */
+  readonly active: BearId
   readonly swapped: boolean
   readonly anyPressed: boolean
 }
@@ -45,6 +47,7 @@ export class ControlRouter {
         mamaStyle: mamaPad!.style,
         cubStyle: cubPad!.style,
         twoPlayer,
+        active: this.active,
         swapped,
         anyPressed
       }
@@ -56,6 +59,7 @@ export class ControlRouter {
       mamaStyle: sharedStyle,
       cubStyle: sharedStyle,
       twoPlayer,
+      active: this.active,
       swapped,
       anyPressed
     }

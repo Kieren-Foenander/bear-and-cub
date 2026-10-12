@@ -1,19 +1,14 @@
-import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
 import type { SoundName } from "../services/Sound.ts"
 import { GRAVITY } from "../services/Physics.ts"
 import type { Bear } from "./bear.ts"
-import { createTree } from "./nature.ts"
+import { createTree, type Env } from "./nature.ts"
 import type { Particles } from "./particles.ts"
 import { CUB } from "./specs.ts"
 import { hangHeight, type Swipes } from "./swipe.ts"
-import { heightAt } from "./terrain.ts"
 import { damp, flat, mesh } from "./util.ts"
 
-export interface SwipeThingContext {
-  readonly rapier: typeof RAPIER
-  readonly world: RAPIER.World
-  readonly scene: THREE.Scene
+export interface SwipeThingContext extends Env {
   readonly swipes: Swipes
   readonly particles: Particles
   readonly sound: (name: SoundName) => void
@@ -35,22 +30,28 @@ export class Bell {
   private swing = 0
   private swingSpeed = 0
   private rung = false
+  private postsAlong: "x" | "z" = "x"
 
-  constructor(ctx: SwipeThingContext, at: THREE.Vector3, onFirstRing: () => void) {
+  /** `postsAlong` is the axis the two posts sit on; walk in along the other axis. */
+  constructor(ctx: SwipeThingContext, at: THREE.Vector3, onFirstRing: () => void, postsAlong: "x" | "z" = "x") {
     const { scene, rapier, world, swipes } = ctx
-    const ground = heightAt(at.x, at.z)
+    const ground = ctx.terrain.heightAt(at.x, at.z)
     const target = new THREE.Vector3(at.x, ground + hangHeight(CUB, 1.65), at.z)
     const barY = ground + 3.6
 
     const wood = flat("#8a5a36")
     for (const side of [-1, 1]) {
       const post = mesh(new THREE.BoxGeometry(0.35, 3.8, 0.35), wood)
-      post.position.set(at.x + side * 1.5, ground + 1.9, at.z)
+      const px = postsAlong === "x" ? at.x + side * 1.5 : at.x
+      const pz = postsAlong === "z" ? at.z + side * 1.5 : at.z
+      post.position.set(px, ground + 1.9, pz)
       scene.add(post)
-      world.createCollider(rapier.ColliderDesc.cuboid(0.18, 1.9, 0.18).setTranslation(at.x + side * 1.5, ground + 1.9, at.z))
+      world.createCollider(rapier.ColliderDesc.cuboid(0.18, 1.9, 0.18).setTranslation(px, ground + 1.9, pz))
     }
     const bar = mesh(new THREE.BoxGeometry(3.6, 0.3, 0.3), wood)
     bar.position.set(at.x, barY, at.z)
+    if (postsAlong === "z") bar.rotation.y = Math.PI / 2
+    this.postsAlong = postsAlong
     scene.add(bar)
 
     this.pivot.position.set(at.x, barY, at.z)
@@ -103,7 +104,8 @@ export class Bell {
     // A damped spring keeps it swinging for a bit after each hit.
     this.swingSpeed += (-this.swing * 18 - this.swingSpeed * 1.2) * dt
     this.swing += this.swingSpeed * dt
-    this.pivot.rotation.z = this.swing * 0.35
+    if (this.postsAlong === "x") this.pivot.rotation.z = this.swing * 0.35
+    else this.pivot.rotation.x = this.swing * 0.35
   }
 }
 
@@ -128,9 +130,9 @@ export class AppleTree {
     private readonly ctx: SwipeThingContext,
     readonly at: THREE.Vector3
   ) {
-    const { scene, rapier, world, swipes } = ctx
-    createTree(scene, rapier, world, at.x, at.z, { scale: 1.4, kind: "round", rand: () => 0.3 })
-    const ground = heightAt(at.x, at.z)
+    const { scene, swipes } = ctx
+    createTree(ctx, at.x, at.z, { scale: 1.4, kind: "round", rand: () => 0.3 })
+    const ground = ctx.terrain.heightAt(at.x, at.z)
     const appleGeometry = new THREE.IcosahedronGeometry(0.26, 1)
     const red = new THREE.MeshStandardMaterial({ color: "#e5484d", flatShading: true, emissive: "#ff9a4d", emissiveIntensity: 0 })
 
@@ -187,7 +189,7 @@ export class AppleTree {
         apple.velocity.y -= GRAVITY * dt
         apple.mesh.position.addScaledVector(apple.velocity, dt)
         apple.mesh.rotation.x += apple.velocity.z * dt * 3
-        const floor = heightAt(apple.mesh.position.x, apple.mesh.position.z) + 0.26
+        const floor = this.ctx.terrain.heightAt(apple.mesh.position.x, apple.mesh.position.z) + 0.26
         if (apple.mesh.position.y < floor) {
           apple.mesh.position.y = floor
           apple.velocity.y = Math.abs(apple.velocity.y) * 0.45

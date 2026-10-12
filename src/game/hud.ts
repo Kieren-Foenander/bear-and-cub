@@ -10,56 +10,35 @@ const el = (className: string, html = "") => {
 }
 
 export interface HudState {
+  readonly visible: boolean
   readonly twoPlayer: boolean
   readonly active: BearId
   readonly mamaStyle: ButtonStyle
   readonly cubStyle: ButtonStyle
   readonly objective: string
+  readonly berries: number
+  readonly berriesTotal: number
   readonly butterflies: number
   readonly butterfliesTotal: number
   readonly soundLocked: boolean
 }
 
-/** All the big, friendly, readable-from-the-couch bits of UI. */
+/** All the big, friendly, readable-from-the-couch bits of in-game UI. */
 export class GameHud {
-  private readonly start: HTMLElement
-  private readonly players: HTMLElement
-  private readonly objective: HTMLElement
-  private readonly counter: HTMLElement
-  private readonly toastEl: HTMLElement
-  private readonly sound: HTMLElement
+  private readonly layer = el("game-hud")
+  private readonly players = el("players")
+  private readonly objective = el("objective")
+  private readonly counters = el("counters")
+  private readonly toastEl = el("toast")
+  private readonly sound = el("sound-hint", "🔇 Click anywhere for sound")
   private toastTimer = 0
   private lastPlayers = ""
   private lastObjective = ""
-  private lastCount = -1
+  private lastCounts = ""
 
   constructor(root: HTMLElement) {
-    this.start = el(
-      "start-screen",
-      `<div class="title">Bear <span>&amp;</span> Cub</div>
-       <div class="subtitle">A cosy adventure for two</div>
-       <div class="start-press">Press <span class="start-buttons"></span> to start</div>
-       <div class="start-help">
-         <div><b>1 controller?</b> Press <em>Back / Select</em> (or <em>Tab</em>) to switch bears.</div>
-         <div><b>2 controllers?</b> Controller 1 is Mama, controller 2 is Cub.</div>
-         <div class="keys">Keyboard: <em>WASD</em> move · <em>Space</em> jump · <em>E</em> action · <em>Q</em> swipe · <em>R</em> throw · <em>Tab</em> switch</div>
-       </div>`
-    )
-    this.players = el("players")
-    this.objective = el("objective")
-    this.counter = el("counter")
-    this.toastEl = el("toast")
-    this.sound = el("sound-hint", "🔇 Click anywhere for sound")
-    root.append(this.start, this.players, this.objective, this.counter, this.toastEl, this.sound)
-    this.setStartStyle("xbox")
-  }
-
-  setStartStyle(style: ButtonStyle) {
-    this.start.querySelector(".start-buttons")!.innerHTML = buttonHtml("a", style)
-  }
-
-  hideStart() {
-    this.start.classList.add("hidden")
+    this.layer.append(this.players, this.objective, this.counters)
+    root.append(this.layer, this.toastEl, this.sound)
   }
 
   toast(text: string) {
@@ -71,16 +50,17 @@ export class GameHud {
   }
 
   popCounter() {
-    this.counter.classList.remove("pop")
-    void this.counter.offsetWidth
-    this.counter.classList.add("pop")
+    this.counters.classList.remove("pop")
+    void this.counters.offsetWidth
+    this.counters.classList.add("pop")
   }
 
   update(dt: number, state: HudState) {
     this.toastTimer -= dt
     if (this.toastTimer <= 0) this.toastEl.classList.remove("show")
+    this.layer.classList.toggle("hidden", !state.visible)
 
-    const players = JSON.stringify([state.twoPlayer, state.active, state.mamaStyle, state.cubStyle])
+    const players = JSON.stringify([state.twoPlayer, state.active, state.mamaStyle])
     if (players !== this.lastPlayers) {
       this.lastPlayers = players
       const card = (id: BearId, name: string, who: string) => {
@@ -92,11 +72,8 @@ export class GameHud {
       }
       const mamaWho = state.twoPlayer ? "Controller 1" : state.active === "mama" ? "Playing" : "Waiting"
       const cubWho = state.twoPlayer ? "Controller 2" : state.active === "cub" ? "Playing" : "Waiting"
-      const swap = state.twoPlayer
-        ? ""
-        : `<div class="swap-hint">${buttonHtml("swap", state.mamaStyle)} switch bear</div>`
-      this.players.innerHTML =
-        card("mama", "Mama Bear", mamaWho) + card("cub", "Cub", cubWho) + swap
+      const swap = state.twoPlayer ? "" : `<div class="swap-hint">${buttonHtml("swap", state.mamaStyle)} switch bear</div>`
+      this.players.innerHTML = card("mama", "Mama Bear", mamaWho) + card("cub", "Cub", cubWho) + swap
     }
 
     if (state.objective !== this.lastObjective) {
@@ -107,9 +84,11 @@ export class GameHud {
       this.objective.classList.add("pop")
     }
 
-    if (state.butterflies !== this.lastCount) {
-      this.lastCount = state.butterflies
-      this.counter.innerHTML = `<span class="counter-icon">🦋</span> ${state.butterflies} / ${state.butterfliesTotal}`
+    const counts = `${state.berries}/${state.berriesTotal}/${state.butterflies}/${state.butterfliesTotal}`
+    if (counts !== this.lastCounts) {
+      this.lastCounts = counts
+      const butterflies = state.butterfliesTotal > 0 ? `<span>🦋 ${state.butterflies} / ${state.butterfliesTotal}</span>` : ""
+      this.counters.innerHTML = `<span>🍓 ${state.berries} / ${state.berriesTotal}</span>${butterflies}`
     }
 
     this.sound.style.display = state.soundLocked ? "" : "none"

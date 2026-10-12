@@ -1,7 +1,15 @@
 import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
-import { heightAt } from "./terrain.ts"
+import type { Terrain } from "./terrain.ts"
 import { damp, flat, jitter, mesh, seeded } from "./util.ts"
+
+/** Where things get built: the scene, the physics world and the ground. */
+export interface Env {
+  readonly scene: THREE.Scene
+  readonly rapier: typeof RAPIER
+  readonly world: RAPIER.World
+  readonly terrain: Terrain
+}
 
 export interface Patch {
   readonly x: number
@@ -9,29 +17,15 @@ export interface Patch {
   readonly radius: number
 }
 
-/** Tall grass patches. Little explorers find butterflies in these. */
-export const GRASS_PATCHES: ReadonlyArray<Patch> = [
-  { x: -16, z: 22, radius: 6 },
-  { x: 17, z: 14, radius: 5.5 },
-  { x: -20, z: 5, radius: 5 },
-  { x: 22, z: 26, radius: 4.5 },
-  { x: -24, z: -13, radius: 5 },
-  { x: 21, z: -12, radius: 5 },
-  { x: -17, z: -38, radius: 6 },
-  { x: 19, z: -45, radius: 6 },
-  { x: -4, z: -60, radius: 5 }
-]
-
 export const createTree = (
-  scene: THREE.Scene,
-  rapier: typeof RAPIER,
-  world: RAPIER.World,
+  env: Env,
   x: number,
   z: number,
   options: { scale?: number; kind?: "pine" | "round"; rand?: () => number } = {}
 ) => {
+  const { scene, rapier, world } = env
   const { scale = 1, kind = "pine", rand = Math.random } = options
-  const y = heightAt(x, z)
+  const y = env.terrain.heightAt(x, z)
   const tree = new THREE.Group()
   tree.position.set(x, y - 0.2, z)
   tree.rotation.y = rand() * Math.PI * 2
@@ -62,9 +56,7 @@ export const createTree = (
 }
 
 export const createRock = (
-  scene: THREE.Scene,
-  rapier: typeof RAPIER,
-  world: RAPIER.World,
+  env: Env,
   x: number,
   z: number,
   size: number,
@@ -73,7 +65,8 @@ export const createRock = (
   const rock = mesh(jitter(new THREE.DodecahedronGeometry(size, 0), size * 0.12), flat(rand() > 0.5 ? "#9a968c" : "#a8a397"))
   rock.scale.y = 0.65
   rock.rotation.y = rand() * Math.PI
-  const y = heightAt(x, z)
+  const { scene, rapier, world } = env
+  const y = env.terrain.heightAt(x, z)
   rock.position.set(x, y + size * 0.2, z)
   scene.add(rock)
   if (size > 0.6) world.createCollider(rapier.ColliderDesc.ball(size * 0.7).setTranslation(x, y + size * 0.1, z))
@@ -87,7 +80,7 @@ export class Grass {
     uBearB: { value: new THREE.Vector3(999, 0, 999) }
   }
 
-  constructor(scene: THREE.Scene, patches: ReadonlyArray<Patch>) {
+  constructor(scene: THREE.Scene, terrain: Terrain, patches: ReadonlyArray<Patch>) {
     const rand = seeded(42)
     const blade = new THREE.ConeGeometry(0.09, 1, 3)
     blade.translate(0, 0.5, 0)
@@ -129,7 +122,7 @@ export class Grass {
         const height = 0.6 + rand() * 0.7 + edge * 0.5
         blades.push(
           new THREE.Matrix4().compose(
-            new THREE.Vector3(x, heightAt(x, z) - 0.05, z),
+            new THREE.Vector3(x, terrain.heightAt(x, z) - 0.05, z),
             new THREE.Quaternion(),
             new THREE.Vector3(1, height, 1)
           )
@@ -163,16 +156,12 @@ interface Flower {
 export class Flowers {
   private readonly flowers: Array<Flower> = []
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, terrain: Terrain, clusters: ReadonlyArray<readonly [number, number]>) {
     const rand = seeded(7)
     const petals = ["#ff7eb6", "#ffd84d", "#ffffff", "#b38cff", "#ff9a4d"]
     const stem = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4)
     const head = new THREE.IcosahedronGeometry(0.16, 0)
     const middle = new THREE.IcosahedronGeometry(0.08, 0)
-    const clusters = [
-      [-6, 18], [7, 24], [-10, 8], [9, 4], [-4, 29], [12, 18], [-12, -16], [10, -14],
-      [-7, -34], [8, -38], [-10, -52], [11, -56], [26, 2], [-28, 30]
-    ] as const
     let note = 0
     for (const [cx, cz] of clusters) {
       const count = 5 + Math.floor(rand() * 4)
@@ -180,7 +169,7 @@ export class Flowers {
         const x = cx + (rand() - 0.5) * 3.5
         const z = cz + (rand() - 0.5) * 3.5
         const group = new THREE.Group()
-        group.position.set(x, heightAt(x, z), z)
+        group.position.set(x, terrain.heightAt(x, z), z)
         const s = mesh(stem, flat("#4c9a3e"), { castShadow: false })
         s.position.y = 0.25
         const h = mesh(head, flat(petals[Math.floor(rand() * petals.length)]!))
@@ -231,7 +220,7 @@ export class Butterflies {
   private readonly butterflies: Array<Butterfly> = []
   private time = 0
 
-  constructor(scene: THREE.Scene, patches: ReadonlyArray<Patch>) {
+  constructor(scene: THREE.Scene, terrain: Terrain, patches: ReadonlyArray<Patch>) {
     const rand = seeded(99)
     const wingColors = ["#ff6fa8", "#ffb347", "#6fc3ff", "#c38bff", "#fff36b", "#ff8d6b"]
     const wingShape = new THREE.Shape()
@@ -265,7 +254,7 @@ export class Butterflies {
         this.butterflies.push({
           group,
           wings: [left, right],
-          home: new THREE.Vector3(x, heightAt(x, z) + 1.1, z),
+          home: new THREE.Vector3(x, terrain.heightAt(x, z) + 1.1, z),
           phase: rand() * 100,
           found: false,
           flee: 0,
@@ -313,5 +302,30 @@ export class Butterflies {
       const delta = b.group.position.clone().sub(before)
       if (delta.lengthSq() > 1e-6) b.group.rotation.y = Math.atan2(delta.x, delta.z)
     }
+  }
+}
+
+/** Sprinkle trees and rocks over a level, avoiding anywhere `blocked` says no. */
+export const scatter = (
+  env: Env,
+  options: { seed: number; trees: number; rocks: number; blocked: (x: number, z: number, margin: number) => boolean; kinds?: ReadonlyArray<"pine" | "round"> }
+) => {
+  const rand = seeded(options.seed)
+  const { minX, maxX, minZ, maxZ } = env.terrain.bounds
+  const kinds = options.kinds ?? ["pine", "pine", "round"]
+  const pick = () => [minX + 6 + rand() * (maxX - minX - 12), minZ + 6 + rand() * (maxZ - minZ - 12)] as const
+  let trees = 0
+  for (let attempt = 0; attempt < options.trees * 12 && trees < options.trees; attempt++) {
+    const [x, z] = pick()
+    if (options.blocked(x, z, 1) || env.terrain.heightAt(x, z) < env.terrain.waterY + 0.5) continue
+    createTree(env, x, z, { scale: 0.8 + rand() * 0.6, kind: kinds[Math.floor(rand() * kinds.length)]!, rand })
+    trees++
+  }
+  let rocks = 0
+  for (let attempt = 0; attempt < options.rocks * 12 && rocks < options.rocks; attempt++) {
+    const [x, z] = pick()
+    if (options.blocked(x, z, -1)) continue
+    createRock(env, x, z, 0.3 + rand() * 1, rand)
+    rocks++
   }
 }

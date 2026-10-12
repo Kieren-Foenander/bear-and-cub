@@ -25,7 +25,7 @@ body {
 
 /* ---------- Start screen ---------- */
 
-.start-screen {
+.screen {
   position: absolute;
   inset: 0;
   display: flex;
@@ -33,14 +33,194 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: radial-gradient(ellipse at center, rgba(255, 248, 230, 0.75), rgba(255, 248, 230, 0.35) 60%, transparent);
-  transition: opacity 0.6s;
-  pointer-events: auto;
+  background: radial-gradient(ellipse at center, rgba(255, 248, 230, 0.8), rgba(255, 248, 230, 0.45) 60%, rgba(255, 248, 230, 0.15));
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s, visibility 0.35s;
 }
 
-.start-screen.hidden {
+.screen.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.game-hud {
+  transition: opacity 0.3s;
+}
+
+.game-hud.hidden {
   opacity: 0;
-  pointer-events: none;
+}
+
+/* ---------- Level map ---------- */
+
+.map-title,
+.menu-title {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 800;
+  color: #8b5a3c;
+  text-shadow: 0 5px 0 #fff;
+}
+
+.cards {
+  display: flex;
+  gap: 18px;
+  padding: 24px;
+  max-width: 100vw;
+  overflow: visible;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.card {
+  position: relative;
+  width: 190px;
+  padding: 16px 12px 12px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  border: 6px solid transparent;
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1), border-color 0.2s;
+}
+
+.card.selected {
+  transform: scale(1.12) translateY(-8px);
+  border-color: #ffb800;
+  background: white;
+}
+
+.card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.7);
+}
+
+.card-number {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #8b5a3c;
+  color: white;
+  font-size: 26px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-emoji {
+  font-size: 64px;
+  line-height: 1.1;
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.card-teaches {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.7;
+  min-height: 40px;
+}
+
+.card-stats {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.card-done {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #3fbf4f;
+  color: white;
+  font-size: 26px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-hint {
+  font-size: 26px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ---------- Pause / complete / credits ---------- */
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  min-width: 380px;
+}
+
+.menu-item {
+  font-size: 32px;
+  font-weight: 800;
+  padding: 10px 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  text-align: center;
+  border: 5px solid transparent;
+  transition: transform 0.15s;
+}
+
+.menu-item.selected {
+  background: white;
+  border-color: #ffb800;
+  transform: scale(1.08);
+}
+
+.complete-emoji,
+.credits-bears {
+  font-size: 110px;
+  line-height: 1;
+  animation: bob 1.2s ease-in-out infinite;
+}
+
+.complete-sub {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5d4433;
+}
+
+.complete-stats {
+  display: flex;
+  gap: 40px;
+  font-size: 44px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 10px 36px;
+  border-radius: 28px;
+}
+
+.credits-text {
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.credits-small {
+  font-size: 22px;
+  font-weight: 600;
+  opacity: 0.75;
 }
 
 .title {
@@ -290,18 +470,23 @@ body {
   animation: banner-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
-.counter {
+.counters {
   position: absolute;
   top: 18px;
   right: 22px;
-  font-size: 36px;
+  display: flex;
+  gap: 12px;
+  font-size: 34px;
   font-weight: 800;
+}
+
+.counters span {
   background: rgba(255, 255, 255, 0.88);
-  padding: 4px 22px;
+  padding: 4px 20px;
   border-radius: 999px;
 }
 
-.counter.pop {
+.counters.pop {
   animation: counter-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1);
 }
 

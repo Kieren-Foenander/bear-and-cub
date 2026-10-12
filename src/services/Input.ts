@@ -58,7 +58,8 @@ const KEYMAP: Record<string, Button> = {
   KeyR: "y",
   KeyI: "y",
   Tab: "swap",
-  Enter: "start"
+  Enter: "start",
+  Escape: "start"
 }
 
 // Standard gamepad mapping: https://w3c.github.io/gamepad/#remapping
