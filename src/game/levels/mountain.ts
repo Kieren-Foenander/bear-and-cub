@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { bounceCoach } from "../coaches.ts"
+import { SpotMarker } from "../coop.ts"
 import { createTree, scatter, type Patch } from "../nature.ts"
 import { cliff, Drawbridge, mushroom, sign } from "../props.ts"
 import { Bell, HangingPinecone } from "../swipeThings.ts"
@@ -74,7 +75,7 @@ export const mountain: LevelDef = {
     hill: "#6aa84f"
   },
   build: (api) => {
-    const { mama, cub, coop, berries, particles, sound, toast, shake, interactions, surfaces, rapier } = api
+    const { scene, mama, cub, coop, berries, particles, sound, toast, shake, interactions, surfaces, rapier } = api
     const at = (x: number, z: number) => new THREE.Vector3(x, height(x, z), z)
 
     // Rocky cliff faces at each tier (the crevasse is cut out of the first one).
@@ -112,9 +113,9 @@ export const mountain: LevelDef = {
 
     // --- Tier 1: wobbly stones over the crevasse. They hold Cub but crumble under Mama. ---
     const stones = [
-      { x: 3.5, z: 9.6, r: 0.7 },
-      { x: 5.4, z: 8.1, r: 0.65 },
-      { x: 3.8, z: 6.5, r: 0.65 }
+      { x: 3.5, z: 9.6, r: 0.85 },
+      { x: 5.4, z: 8.1, r: 0.8 },
+      { x: 3.8, z: 6.5, r: 0.8 }
     ]
     for (const [i, s] of stones.entries()) {
       const object = new THREE.Group()
@@ -208,18 +209,20 @@ export const mountain: LevelDef = {
       const low = TIERS[1].y - 0.3
       const high = TIERS[2].y - 0.3
       const heightAtTime = (t: number) => low + (high - low) * (clamp(Math.sin(t * 0.42) * 1.7, -1, 1) * 0.5 + 0.5)
+      const under = (bear: typeof cub) =>
+        Math.hypot(bear.position.x - x, bear.position.z - z) < 1.45 + bear.spec.radius && bear.position.y < position.y - 0.2
+      // A paw to wait on, safely out from under the stone.
+      const marker = new SpotMarker(scene, at(x, z + 2.6), "#ffe066", 1.1)
       const platform = surfaces.addPlatform(object, rapier.ColliderDesc.cylinder(0.3, 1.45), (_t, _weight, dt) => {
         // Waits at the bottom and the top, glides in between. Never comes down on a bear underneath.
         const next = heightAtTime(clock + dt)
-        const underneath = [mama, cub].some(
-          (bear) => Math.hypot(bear.position.x - x, bear.position.z - z) < 1.45 + bear.spec.radius && bear.position.y < position.y - 0.2
-        )
+        const underneath = under(mama) || under(cub)
         if (!(next < position.y && underneath)) clock += dt
         return position.set(x, heightAtTime(clock), z)
       })
       position.set(x, heightAtTime(clock), z)
       berries.add(new THREE.Vector3(x, TIERS[2].y + 1.5, TIERS[2].front + 1.7), 0)
-      return { platform, glow }
+      return { platform, glow, under, marker }
     })
     interactions.add({
       id: "ride-lifts",
@@ -234,6 +237,8 @@ export const mountain: LevelDef = {
         const nearest = lifts.reduce((a, b) =>
           Math.abs(a.platform.object.position.x - bear.position.x) < Math.abs(b.platform.object.position.x - bear.position.x) ? a : b
         )
+        // Standing underneath stops it coming down (so nobody gets squished): ask them to step back.
+        if (nearest.under(bear)) return { buttons: ["move"], label: "Step back to the paw!" }
         const down = nearest.platform.object.position.y < TIERS[1].y + 0.2
         return down ? { buttons: ["a"], label: "Hop on!", now: true } : { buttons: [], label: "Wait for the stone…" }
       }
@@ -303,6 +308,7 @@ export const mountain: LevelDef = {
         bouncy.cap.scale.y = damp(bouncy.cap.scale.y, 0.6, 8, dt)
         bouncy.cap.scale.z = bouncy.cap.scale.x
         for (const lift of lifts) {
+          lift.marker.update(dt, true)
           const down = lift.platform.object.position.y < TIERS[1].y + 0.2
           ;(lift.glow.material as THREE.MeshBasicMaterial).opacity = down ? 0.9 : 0.25
         }

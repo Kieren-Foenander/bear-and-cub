@@ -159,7 +159,9 @@ export class Coop {
 
   /** "Come here!" Cub pops straight onto Mama's back (never into a wall). */
   private call() {
-    if (this.cub.mode !== "walk" || this.cub.position.distanceTo(this.mama.position) < 4) return
+    // Only skip it when she's right there anyway (close by and on the same level, so B picks her up).
+    const close = Math.hypot(this.cub.position.x - this.mama.position.x, this.cub.position.z - this.mama.position.z) < 2.6
+    if (this.cub.mode !== "walk" || (close && Math.abs(this.cub.feetY - this.mama.feetY) < 1.2)) return
     this.particles.burst(this.cub.position, { colors: ["#ffffff", "#ff9ad5"], count: 16, speed: 3, up: 2 })
     this.carrying = true
     this.particles.burst(this.mama.backAnchor, { colors: ["#ffffff", "#ff9ad5"], count: 16, speed: 3, up: 2 })

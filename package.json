@@ -9,7 +9,8 @@
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
     "deploy": "vite build && wrangler deploy",
-    "playtest": "bash tools/playtest-all.sh"
+    "playtest": "bash tools/playtest-all.sh",
+    "playtest:qa": "bash tools/playtest-qa.sh 5173"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

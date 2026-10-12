@@ -95,11 +95,11 @@ export const pond: LevelDef = {
     lilyPad(-4.9, -3.8, 1.1)
     lilyPad(-1.8, -5, 1)
     lilyPad(1.4, -6.2, 0.9)
-    lilyPad(4.4, -7.3, 0.8)
+    lilyPad(4.4, -7.3, 0.85)
     // Frog rock → north shore: smaller still.
-    lilyPad(9.4, -12.4, 0.85)
-    lilyPad(8.6, -15.3, 0.8)
-    lilyPad(9.3, -18.1, 0.75)
+    lilyPad(9.4, -12.4, 0.9)
+    lilyPad(8.6, -15.3, 0.88)
+    lilyPad(9.3, -18.1, 0.9)
     // Bonus: a drifting pad out to a little berry islet.
     lilyPad(14.3, -4.5, 1, { dx: 1.5, speed: 0.9 })
     berries.ring(at(ISLANDS[2].x, ISLANDS[2].z), 1, 4, height)

@@ -2,7 +2,7 @@ import { Synth } from "./synth.ts"
 import { CHORDS, random, SCALE, THEMES, type Theme, type ThemeId } from "./themes.ts"
 
 /** Effects' master is 0.35; music's voices are also much softer than effect voices. */
-export const MUSIC_VOLUME = 0.1
+export const MUSIC_VOLUME = 0.17
 export const CROSSFADE_SECONDS = 1.8
 const LOOKAHEAD = 0.18
 

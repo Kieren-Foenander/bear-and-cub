@@ -67,7 +67,7 @@ export const bounceCoach = (
   interactions: Interactions,
   options: { top: THREE.Vector3; radius: number; who?: BearId; enabled?: () => boolean; window?: number }
 ) => {
-  const { top, radius, who = "cub", enabled = () => true, window = 0.24 } = options
+  const { top, radius, who = "cub", enabled = () => true, window = 0.3 } = options
   const anchor = top.clone().add(new THREE.Vector3(0, 3.2, 0))
   interactions.add({
     id: `bounce-${nextId++}`,

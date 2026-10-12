@@ -42,7 +42,7 @@ export interface BearContext {
 const COYOTE_TIME = 0.15
 const JUMP_BUFFER = 0.15
 /** How early you can press jump before landing on a mushroom and still get the big bounce. */
-const SUPER_BOUNCE_WINDOW = 0.28
+const SUPER_BOUNCE_WINDOW = 0.35
 
 export class Bear {
   readonly body: RAPIER.RigidBody
