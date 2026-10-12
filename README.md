@@ -35,6 +35,8 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
   everywhere ("Lily: jump and swipe an apple!").
 - **Hats:** every level you finish unlocks a hat for Cub. Press ▲ / ▼ on the map to try them on.
 - Controllers **rumble** on hits, bounces, splashes and hugs (where the browser supports it).
+- **Music:** gentle procedural tunes for the menus and every level, with birdsong, water, crickets
+  or wind. Press **M** to turn music on or off (remembered).
 - **Quiet help:** if she keeps just missing a swipe or a big bounce, the timing window gets a
   little wider each time, so practice always pays off.
 
@@ -69,7 +71,8 @@ hidden everywhere for little explorers, and the level map remembers your best.
 ```
 src/
   main.ts                composes the layers and launches the game
-  services/              Effect services: Renderer, Physics, Input, Sound, Save, Hud
+  services/              Effect services: Renderer, Physics, Input, Sound, Music, Save, Hud
+  services/music/        procedural music: themes, synth voices, scheduler
   game/
     Game.ts              the session: menus, saving, loading levels, frame loop
     stage.ts             one running level (its own scene + physics world)
@@ -97,7 +100,9 @@ src/
 - `?level=3` jumps straight into a level; `?unlock` unlocks every level on the map.
 - `/model-preview.html` (dev server only) shows both bears with buttons for every animation.
 - `bun run playtest` (with `bun run dev` running on port 5173) plays every level start to
-  finish headlessly with scripted input and checks each one completes. Tests live in
+  finish headlessly with scripted input and checks each one completes. `bun run playtest:qa`
+  runs the QA regressions (menus/saving, recovery after falling in, coaching prompts, emulated
+  controllers…). See [docs/qa-report.md](docs/qa-report.md) for the QA pass. Tests live in
   `tools/tests/`; `bun tools/playtest.ts <test.js> --url <url>` runs one and can save
   screenshots to `/tmp/shots/`.
 
