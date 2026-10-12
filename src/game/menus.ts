@@ -76,11 +76,18 @@ export class Menus {
     screen.classList.add("show")
   }
 
-  showTitle(style: ButtonStyle, cubName: string) {
+  showTitle(style: ButtonStyle, cubName: string, pads: number) {
+    const controllers =
+      pads >= 2
+        ? `🎮🎮 Two controllers: 1 is Mama, 2 is ${cubName}`
+        : pads === 1
+          ? "🎮 One controller ready (Back / Select switches bears)"
+          : "Plug in a controller and press a button, or use the keyboard"
     this.show(
       this.title,
       `<div class="title">Bear <span>&amp;</span> Cub</div>
        <div class="subtitle">A cosy adventure for two</div>
+       <div class="start-pads">${controllers}</div>
        <div class="start-press">Press ${buttonHtml("a", style)} to start</div>
        <div class="start-name">${cubName === "Cub" ? "Grown-ups: press <em>N</em> to give Cub a name" : `Playing as Mama and <b>${cubName}</b> · <em>N</em> to change`}</div>
        <div class="start-help">

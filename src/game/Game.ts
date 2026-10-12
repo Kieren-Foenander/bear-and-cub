@@ -215,7 +215,7 @@ class Session {
 
     switch (this.screen) {
       case "title": {
-        this.menus.showTitle(style, this.cubName)
+        this.menus.showTitle(style, this.cubName, this.padCount)
         if (nav.confirm || nav.start) {
           this.sound.unlock()
           this.sound.play("success")
