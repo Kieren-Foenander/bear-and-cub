@@ -32,9 +32,21 @@ log(st().obj)
 await shot('woods-steps')
 play('mama')
 walkTo(mama, 9, -9.5, 600, 0.3)
-for (let i = 0; i < 7; i++) { run(1, ['Space', 'KeyW']); for (let k = 0; k < 50; k++) { run(1, k < 12 ? ['KeyW'] : []); if (k > 5 && mama.grounded) break } run(10, []) }
+const hopTo = (bear, x, z) => {
+  for (let i = 0; i < 120; i++) {
+    const dx = x - bear.position.x, dz = z - bear.position.z, d = Math.hypot(dx, dz)
+    const codes = []
+    if (d > 0.3) { if (dx > 0.3 * d) codes.push('KeyD'); if (dx < -0.3 * d) codes.push('KeyA'); if (dz > 0.3 * d) codes.push('KeyS'); if (dz < -0.3 * d) codes.push('KeyW') }
+    if (i === 0) codes.push('Space')
+    run(1, codes)
+    if (i > 8 && bear.grounded && d < 0.5) break
+  }
+  run(5, [])
+  return r(bear.position)
+}
+for (const z of [-12, -14, -16, -18, -20, -22, -26]) log('step', hopTo(mama, 9, z))
 log('mama top?', r(mama.position), st().obj)
-walkTo(mama, -1, -40, 900, 0.5)
+walkTo(mama, 9, -30, 300, 0.5); walkTo(mama, -1, -40, 900, 0.5)
 play('cub'); walkTo(cub, 1, -41, 900, 0.5); run(30)
 log('done', S.stage.completeTime)
 await shot('woods-end')
