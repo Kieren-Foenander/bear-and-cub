@@ -24,6 +24,8 @@ export interface StageServices {
   readonly sound: Sound["Service"]
   readonly toast: (text: string) => void
   readonly popCounter: () => void
+  /** Buzz the controller driving a bear (or both). */
+  readonly rumble: (who: "mama" | "cub" | "both", strength: number, ms: number) => void
 }
 
 interface Goal {
@@ -98,8 +100,10 @@ export class Stage {
       surfaces: this.surfaces,
       sound: play,
       isBear: (collider: RAPIER.Collider) => bearColliders.has(collider.handle),
+      rumble: (bear: Bear, strength: number, ms: number) => services.rumble(bear.spec.id, strength, ms),
       onSplash: (bear: Bear) => {
         play("splash")
+        services.rumble(bear.spec.id, 0.5, 250)
         this.particles.burst(bear.position, { colors: ["#ffffff", "#bfe8ff", "#7fd0ff"], count: 30, speed: 5, up: 6 })
         services.toast("Splash!")
       }
@@ -133,7 +137,10 @@ export class Stage {
       cub: this.cub,
       sound: play,
       toast: services.toast,
-      shake: (amount) => this.cameraRig.shake(amount),
+      shake: (amount) => {
+        this.cameraRig.shake(amount)
+        services.rumble("both", Math.min(1, amount), 250)
+      },
       goal: (at, open = () => true) => {
         this.goal = this.buildGoal(at, open)
       },
@@ -238,6 +245,7 @@ export class Stage {
             this.particles.burst(between, { colors: ["#ff6fa8", "#ff3d7f", "#ffb3d1"], count: 36, speed: 3, up: 3, gravity: 0.05, life: 2, size: 0.15 })
             sound.play("found")
             this.services.toast("Bear hug! ❤️")
+            this.services.rumble("both", 0.35, 350)
             mama.model.celebrate()
             cub.model.celebrate()
           }
@@ -248,7 +256,7 @@ export class Stage {
         if (pad?.pressed.x && bear.mode === "walk") {
           bear.model.swipe()
           sound.play("swipe")
-          this.swipes.swipe(bear)
+          if (this.swipes.swipe(bear)) this.services.rumble(bear.spec.id, 0.45, 120)
         }
       }
     } else {
@@ -313,6 +321,7 @@ export class Stage {
     if (open && close(this.mama) && close(this.cub)) {
       this.completeTime = 0
       this.services.sound.play("success")
+      this.services.rumble("both", 0.6, 500)
       this.mama.model.celebrate()
       this.cub.model.celebrate()
       for (let i = 0; i < 4; i++) {

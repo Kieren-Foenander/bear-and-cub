@@ -90,6 +90,8 @@ export class Input extends Context.Service<Input, {
   /** Sample every device. Call exactly once per frame before reading `devices`. */
   readonly poll: () => void
   readonly devices: () => ReadonlyArray<Device>
+  /** Buzz a controller (by device id). Strength 0..1. Does nothing for keyboards / unsupported pads. */
+  readonly rumble: (deviceId: string, strength: number, ms: number) => void
 }>()("bears/services/Input") {
   static readonly layer = Layer.effect(
     Input,
@@ -172,7 +174,19 @@ export class Input extends Context.Service<Input, {
         current = devices
       }
 
-      return Input.of({ poll, devices: () => current })
+      const rumble = (deviceId: string, strength: number, ms: number) => {
+        const index = Number(deviceId.replace("gamepad-", ""))
+        if (!deviceId.startsWith("gamepad-") || Number.isNaN(index)) return
+        const pad = navigator.getGamepads()[index]
+        // Not every browser/controller supports rumble; it's a bonus, never required.
+        void pad?.vibrationActuator?.playEffect("dual-rumble", {
+          duration: ms,
+          strongMagnitude: Math.min(1, strength),
+          weakMagnitude: Math.min(1, strength * 0.8)
+        })?.catch(() => {})
+      }
+
+      return Input.of({ poll, devices: () => current, rumble })
     })
   )
 }

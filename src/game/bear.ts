@@ -33,6 +33,8 @@ export interface BearContext {
   readonly surfaces: Surfaces
   readonly sound: (name: SoundName) => void
   readonly onSplash: (bear: Bear) => void
+  /** Buzz this bear's controller. */
+  readonly rumble: (bear: Bear, strength: number, ms: number) => void
   /** Colliders the ground ray should ignore (the bears themselves). */
   readonly isBear: (collider: RAPIER.Collider) => boolean
 }
@@ -201,6 +203,7 @@ export class Bear {
       const big = this.sinceJumpPress < SUPER_BOUNCE_WINDOW && this.mode === "walk" && !heavy
       this.velocity.y = big ? this.surfaceBelow.superPower : this.surfaceBelow.power * (heavy ? 0.8 : 1)
       this.surfaceBelow.onBounce(big)
+      this.ctx.rumble(this, big ? 0.7 : 0.25, big ? 200 : 80)
       this.model.land(0.8)
       this.sinceJumpPress = 99
       this.jumpBuffer = 0
@@ -251,6 +254,7 @@ export class Bear {
       if (!wasGrounded && this.airTime > 0.25) {
         this.model.land(Math.min(1, this.airTime))
         this.ctx.sound("land")
+        if (this.airTime > 0.6) this.ctx.rumble(this, 0.3, 90)
       }
       this.airTime = 0
       this.velocity.y = Math.max(this.velocity.y, -1)

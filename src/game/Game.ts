@@ -69,7 +69,13 @@ class Session {
       camera: this.renderer.camera,
       sound: this.sound,
       toast: (text) => this.hud.toast(text),
-      popCounter: () => this.hud.popCounter()
+      popCounter: () => this.hud.popCounter(),
+      rumble: (who, strength, ms) => {
+        // Two controllers: each bear has its own. One controller: it gets everything.
+        const pads = this.input.devices().filter((d) => d.kind === "gamepad")
+        const targets = pads.length >= 2 ? (who === "both" ? [pads[0]!, pads[1]!] : [who === "mama" ? pads[0]! : pads[1]!]) : pads.slice(0, 1)
+        for (const pad of targets) this.input.rumble(pad.id, strength, ms)
+      }
     })
   }
 
