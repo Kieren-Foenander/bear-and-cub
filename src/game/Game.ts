@@ -7,7 +7,9 @@ import { Renderer } from "../services/Renderer.ts"
 import { type Progress, recordResult, Save } from "../services/Save.ts"
 import { Sound } from "../services/Sound.ts"
 import { ControlRouter, type Routed } from "./controls.ts"
+import { bearStyle, setDefaultBearStyle } from "./bearModel.ts"
 import { type Hat, HATS, hatById } from "./hats.ts"
+import { BEAR_STYLES } from "./models/styles.ts"
 import { GameHud } from "./hud.ts"
 import { LEVELS } from "./levels/index.ts"
 import { type LevelStats, MenuNav, Menus } from "./menus.ts"
@@ -16,7 +18,7 @@ import { Stage } from "./stage.ts"
 
 type Screen = "title" | "map" | "playing" | "paused" | "help" | "complete" | "credits"
 
-const PAUSE_ITEMS = ["Keep playing", "How to play", "Start level again", "Back to the map"] as const
+const PAUSE_ITEMS = ["Keep playing", "How to play", "Bear look", "Start level again", "Back to the map"] as const
 /** How long to enjoy the celebration before the "You did it!" card. */
 const CELEBRATE_TIME = 3
 
@@ -53,6 +55,7 @@ class Session {
     this.prompts = new Prompts(hudRoot)
     this.menus = new Menus(hudRoot)
     this.progress = save.load()
+    setDefaultBearStyle(this.progress.bearStyle ?? "")
 
     // `?level=3` jumps straight into a level (handy while building them).
     const requested = Number(new URLSearchParams(location.search).get("level"))
@@ -118,6 +121,18 @@ class Session {
     if (name === null) return
     this.progress = { ...this.progress, cubName: name.trim().slice(0, 16) }
     this.save.save(this.progress)
+  }
+
+  /** Cycle the bears' art style (live, so you can compare them mid-level). */
+  private nextBearStyle() {
+    const current = BEAR_STYLES.findIndex((s) => s.id === bearStyle(this.progress.bearStyle ?? "").id)
+    const next = BEAR_STYLES[(current + 1) % BEAR_STYLES.length]!
+    this.progress = { ...this.progress, bearStyle: next.id }
+    this.save.save(this.progress)
+    setDefaultBearStyle(next.id)
+    this.stage.mama.model.setStyle(next.id)
+    this.stage.cub.model.setStyle(next.id)
+    this.sound.play("pickup")
   }
 
   private firstUnfinished() {
@@ -282,15 +297,18 @@ class Session {
       case "paused": {
         if (nav.up) this.pauseSelected = (this.pauseSelected + PAUSE_ITEMS.length - 1) % PAUSE_ITEMS.length
         if (nav.down) this.pauseSelected = (this.pauseSelected + 1) % PAUSE_ITEMS.length
-        this.menus.showPause(PAUSE_ITEMS, this.pauseSelected, style)
+        const labels = PAUSE_ITEMS.map((item) => (item === "Bear look" ? `Bear look: ${bearStyle(this.progress.bearStyle ?? "").label} ▸` : item))
+        this.menus.showPause(labels, this.pauseSelected, style)
         if (nav.back || nav.start || (nav.confirm && this.pauseSelected === 0)) {
           this.screen = "playing"
           this.menus.hide()
         } else if (nav.confirm && this.pauseSelected === 1) {
           this.screen = "help"
         } else if (nav.confirm && this.pauseSelected === 2) {
-          this.loadLevel(this.levelIndex)
+          this.nextBearStyle()
         } else if (nav.confirm && this.pauseSelected === 3) {
+          this.loadLevel(this.levelIndex)
+        } else if (nav.confirm && this.pauseSelected === 4) {
           this.mapSelected = this.levelIndex
           this.screen = "map"
         }

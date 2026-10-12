@@ -19,10 +19,10 @@ run(60, ['KeyW', 'KeyQ', 'KeyR'])
 assert(stage.mama.position.equals(position), 'paused gameplay must stay frozen')
 run(1); tap('Escape')
 assert(S.screen === 'playing', 'Escape should resume')
-tap('Escape'); tap('KeyS'); tap('KeyS'); tap('Space'); run(30)
+tap('Escape'); tap('KeyS'); tap('KeyS'); tap('KeyS'); tap('Space'); run(30)
 assert(S.screen === 'playing' && S.stage !== stage, 'restart should replace the stage')
 assert(S.stage.berries.collected === 0, 'restart should reset collectibles')
-tap('Escape'); tap('KeyS'); tap('KeyS'); tap('KeyS'); tap('Space'); run(5)
+tap('Escape'); tap('KeyS'); tap('KeyS'); tap('KeyS'); tap('KeyS'); tap('Space'); run(5)
 assert(S.screen === 'map', 'pause should return to the map')
 
 // Exercise real completion by opening each goal through its puzzle trigger, then

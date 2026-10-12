@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import type { BearLook } from "../bearModel.ts"
+import type { BearLook } from "../types.ts"
 import { batchStaticParts, line, material, part, pebble } from "./shapes.ts"
 
 /** All animation pivots are separate from the game-owned root transform. */

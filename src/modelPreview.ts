@@ -41,8 +41,10 @@ mat.position.y = -0.041
 mat.receiveShadow = true
 scene.add(mat)
 
-const mama = new BearModel(MAMA.look, MAMA.scale)
-const cub = new BearModel(CUB.look, CUB.scale)
+// `?style=origami` (etc.) previews a different bear art style.
+const style = new URLSearchParams(location.search).get("style") ?? undefined
+const mama = new BearModel(MAMA.look, MAMA.scale, style)
+const cub = new BearModel(CUB.look, CUB.scale, style)
 scene.add(mama.root, cub.root)
 const camera = new THREE.PerspectiveCamera(33, 1, 0.1, 150)
 let view = "portrait"
