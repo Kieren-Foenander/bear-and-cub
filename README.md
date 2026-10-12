@@ -30,10 +30,18 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
 - **One controller / keyboard:** press **Back / Select** (or **Tab**) to switch bears.
 - **Keyboard:** WASD move · Space jump · E action · Q swipe · R throw / call · Tab switch · Esc pause.
 - **Lost cub?** Mama presses **Y** and Cub hops straight onto her back.
+- **Bear hug:** stand close and both roar (B) at the same time. ❤️
+- **Name Cub:** press **N** on the title screen and type your little one's name. The game uses it
+  everywhere ("Lily: jump and swipe an apple!").
+- **Hats:** every level you finish unlocks a hat for Cub. Press ▲ / ▼ on the map to try them on.
+- Controllers **rumble** on hits, bounces, splashes and hugs (where the browser supports it).
+- **Quiet help:** if she keeps just missing a swipe or a big bounce, the timing window gets a
+  little wider each time, so practice always pays off.
 
 ## The adventure
 
-Five levels, each teaching one new controller skill (see [docs/skills.md](docs/skills.md)).
+Five adventure levels, each teaching one new controller skill (see [docs/skills.md](docs/skills.md)),
+plus a free-play park.
 Every level ends with both bears reaching the honey pot. Berries and butterflies are
 hidden everywhere for little explorers, and the level map remembers your best.
 
@@ -44,6 +52,7 @@ hidden everywhere for little explorers, and the level map remembers your best.
 | 3 | 🐸 Lily Pond | Landing on little things | Stepping stones · lily pads that sink under Mama · boop the frog to call the turtles up as Mama's path |
 | 4 | 🍄 Mushroom Woods | Timing against moving things | Super-bounce (press jump just before you land) over a fence · ride floating logs · seesaw launch · magic mushroom steps |
 | 5 | 🍯 Honey Mountain | Everything together | A four-tier climb using every skill, ending with the giant honeycomb |
+| ★ | 🎪 Bear Playground | Free play (opens after level 1) | Mushroom trampolines, musical bells, lily pond, seesaw up to a treehouse, a stream for running jumps |
 
 ## How it's built
 
@@ -78,6 +87,8 @@ src/
     nature.ts            trees, rocks, grass, flowers, butterflies
     critters.ts          frog, turtles, dragonflies
     collectibles.ts      berries
+    hats.ts              Cub's unlockable hats
+    batching.ts          merges static scenery into a few draw calls
     menus.ts, hud.ts, prompts.ts   big friendly UI
 ```
 
