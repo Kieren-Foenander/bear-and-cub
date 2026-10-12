@@ -21,6 +21,7 @@ export interface HudState {
   readonly butterflies: number
   readonly butterfliesTotal: number
   readonly soundLocked: boolean
+  readonly cubName: string
 }
 
 /** All the big, friendly, readable-from-the-couch bits of in-game UI. */
@@ -61,7 +62,7 @@ export class GameHud {
     this.layer.classList.toggle("hidden", !state.visible)
     this.toastEl.style.visibility = state.visible ? "" : "hidden"
 
-    const players = JSON.stringify([state.twoPlayer, state.active, state.mamaStyle])
+    const players = JSON.stringify([state.twoPlayer, state.active, state.mamaStyle, state.cubName])
     if (players !== this.lastPlayers) {
       this.lastPlayers = players
       const card = (id: BearId, name: string, who: string) => {
@@ -74,7 +75,7 @@ export class GameHud {
       const mamaWho = state.twoPlayer ? "Controller 1" : state.active === "mama" ? "Playing" : "Waiting"
       const cubWho = state.twoPlayer ? "Controller 2" : state.active === "cub" ? "Playing" : "Waiting"
       const swap = state.twoPlayer ? "" : `<div class="swap-hint">${buttonHtml("swap", state.mamaStyle)} switch bear</div>`
-      this.players.innerHTML = card("mama", "Mama Bear", mamaWho) + card("cub", "Cub", cubWho) + swap
+      this.players.innerHTML = card("mama", "Mama Bear", mamaWho) + card("cub", state.cubName, cubWho) + swap
     }
 
     if (state.objective !== this.lastObjective) {

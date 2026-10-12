@@ -608,3 +608,15 @@ body {
   gap: 6px;
   font-size: 26px;
 }
+
+.start-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #5d4433;
+  opacity: 0.85;
+}
+
+.start-name em {
+  font-style: normal;
+  font-weight: 800;
+}

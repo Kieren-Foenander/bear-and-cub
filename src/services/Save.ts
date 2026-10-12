@@ -11,7 +11,9 @@ export type LevelResult = typeof LevelResult.Type
 
 const Progress = Schema.Struct({
   version: Schema.Literal(1),
-  levels: Schema.Record(Schema.String, LevelResult)
+  levels: Schema.Record(Schema.String, LevelResult),
+  /** What the little one wants Cub to be called. */
+  cubName: Schema.optional(Schema.String)
 })
 export type Progress = typeof Progress.Type
 

@@ -76,12 +76,13 @@ export class Menus {
     screen.classList.add("show")
   }
 
-  showTitle(style: ButtonStyle) {
+  showTitle(style: ButtonStyle, cubName: string) {
     this.show(
       this.title,
       `<div class="title">Bear <span>&amp;</span> Cub</div>
        <div class="subtitle">A cosy adventure for two</div>
        <div class="start-press">Press ${buttonHtml("a", style)} to start</div>
+       <div class="start-name">${cubName === "Cub" ? "Grown-ups: press <em>N</em> to give Cub a name" : `Playing as Mama and <b>${cubName}</b> · <em>N</em> to change`}</div>
        <div class="start-help">
          <div><b>1 controller?</b> Press <em>Back / Select</em> (or <em>Tab</em>) to switch bears.</div>
          <div><b>2 controllers?</b> Controller 1 is Mama, controller 2 is Cub.</div>
@@ -160,13 +161,13 @@ export class Menus {
     )
   }
 
-  showCredits(style: ButtonStyle) {
+  showCredits(style: ButtonStyle, cubName: string) {
     this.show(
       this.credits,
       `<div class="credits-bears">🐻🧸</div>
        <div class="title">The End</div>
        <div class="subtitle">Mama and Cub found all the honey!</div>
-       <div class="credits-text">Thank you for playing, Cub.<br/>You were amazing at helping Mama.</div>
+       <div class="credits-text">Thank you for playing, ${cubName}.<br/>You were amazing at helping Mama.</div>
        <div class="credits-small">Made with love by Dad</div>
        <div class="menu-hint">${buttonHtml("a", style)} back to the map</div>`
     )

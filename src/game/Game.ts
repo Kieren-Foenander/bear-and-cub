@@ -30,7 +30,7 @@ class Session {
   private readonly menus: Menus
   stage: Stage
   private levelIndex = 0
-  private screen: Screen = "title"
+  screen: Screen = "title"
   private mapSelected = 0
   private pauseSelected = 0
   private progress: Progress
@@ -68,7 +68,7 @@ class Session {
       rapier: this.physics.RAPIER,
       camera: this.renderer.camera,
       sound: this.sound,
-      toast: (text) => this.hud.toast(text),
+      toast: (text) => this.hud.toast(this.named(text)),
       popCounter: () => this.hud.popCounter(),
       rumble: (who, strength, ms) => {
         // Two controllers: each bear has its own. One controller: it gets everything.
@@ -77,6 +77,25 @@ class Session {
         for (const pad of targets) this.input.rumble(pad.id, strength, ms)
       }
     })
+  }
+
+  /** What we call the little one's bear. Dad can change it with N on the title screen. */
+  get cubName() {
+    return this.progress.cubName?.trim() || "Cub"
+  }
+
+  /** Swap "Cub" in any text for her chosen name. */
+  private named(text: string) {
+    return this.cubName === "Cub" ? text : text.replace(/\bCub\b/g, this.cubName)
+  }
+
+  /** Ask for a name (only from the title or map screen, so typing can't move the bears). */
+  askName() {
+    if (this.screen !== "title" && this.screen !== "map") return
+    const name = window.prompt("What's Cub's name?", this.cubName === "Cub" ? "" : this.cubName)
+    if (name === null) return
+    this.progress = { ...this.progress, cubName: name.trim().slice(0, 16) }
+    this.save.save(this.progress)
   }
 
   private firstUnfinished() {
@@ -128,7 +147,8 @@ class Session {
       active: this.router.active,
       mamaStyle: this.styleFor("mama", devices) ?? "keyboard",
       cubStyle: this.styleFor("cub", devices) ?? "keyboard",
-      objective: playing ? stage.objective().text : "",
+      objective: playing ? this.named(stage.objective().text) : "",
+      cubName: this.cubName,
       berries: stage.berries.collected,
       berriesTotal: stage.berries.total,
       butterflies: stage.butterfliesFound,
@@ -157,7 +177,7 @@ class Session {
   private play(dt: number, routed: Routed) {
     if (routed.swapped) {
       this.sound.play("swap")
-      this.hud.toast(this.router.active === "mama" ? "Playing as Mama" : "Playing as Cub")
+      this.hud.toast(this.router.active === "mama" ? "Playing as Mama" : `Playing as ${this.cubName}`)
     }
     this.stage.update(dt, routed)
     if (this.stage.completeTime > CELEBRATE_TIME) this.finishLevel()
@@ -184,7 +204,7 @@ class Session {
 
     switch (this.screen) {
       case "title": {
-        this.menus.showTitle(style)
+        this.menus.showTitle(style, this.cubName)
         if (nav.confirm || nav.start) {
           this.sound.unlock()
           this.sound.play("success")
@@ -245,7 +265,7 @@ class Session {
         return
       }
       case "credits": {
-        this.menus.showCredits(style)
+        this.menus.showCredits(style, this.cubName)
         if (nav.confirm) {
           this.mapSelected = 0
           this.screen = "map"
@@ -274,6 +294,15 @@ export const GameLive = Layer.effectDiscard(
     )
     // Handy for poking at the game from the browser console while developing.
     if (import.meta.env.DEV) Object.assign(window, { session })
+
+    // N on the title screen: give Cub a name.
+    const onKey = (event: KeyboardEvent) => {
+      if (event.code === "KeyN") session.askName()
+    }
+    yield* Effect.acquireRelease(
+      Effect.sync(() => window.addEventListener("keydown", onKey)),
+      () => Effect.sync(() => window.removeEventListener("keydown", onKey))
+    )
 
     const loop = Effect.callback<never>(() => {
       let last = performance.now()
