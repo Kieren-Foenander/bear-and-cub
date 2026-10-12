@@ -121,9 +121,20 @@ class Session {
     return this.input.devices().find((d) => d.kind === "gamepad")?.style ?? "keyboard"
   }
 
+  private padCount = 0
+
   frame(dt: number) {
     this.input.poll()
     const devices = this.input.devices()
+    // Let everyone know when a controller joins or leaves.
+    const pads = devices.filter((d) => d.kind === "gamepad").length
+    if (pads !== this.padCount) {
+      if (pads > this.padCount) this.sound.play("pickup")
+      this.hud.toast(
+        pads >= 2 ? `🎮🎮 Mama = 1, ${this.cubName} = 2` : pads === 1 ? "🎮 Controller ready!" : "🎮 Controller gone"
+      )
+      this.padCount = pads
+    }
     const style = this.menuStyle()
 
     if (this.screen === "playing") {
