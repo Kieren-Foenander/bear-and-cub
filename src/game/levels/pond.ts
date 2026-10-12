@@ -195,7 +195,7 @@ export const pond: LevelDef = {
         }
       },
       objective: () => {
-        if (!reachedIsland) return { text: "Hop across the stepping stones!", target: new THREE.Vector3(stones[0]!.x, WATER + 3, stones[0]!.z) }
+        if (!reachedIsland && !booped) return { text: "Hop across the stepping stones!", target: new THREE.Vector3(stones[0]!.x, WATER + 3, stones[0]!.z) }
         if (!booped) {
           if (near2d(cub, frogAt.x, frogAt.z, 4)) return { text: "Cub: boop the frog!", target: frogAt.clone().add(new THREE.Vector3(0, 4, 0)) }
           return { text: "Cub: hop on the lily pads to the frog!", target: frogAt.clone().add(new THREE.Vector3(0, 4, 0)) }
