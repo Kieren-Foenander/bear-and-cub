@@ -1,4 +1,5 @@
 import { Effect, Fiber, Layer } from "effect"
+import { preloadBearModels } from "./game/bearModel.ts"
 import { GameLive } from "./game/Game.ts"
 import { Hud } from "./services/Hud.ts"
 import { Input } from "./services/Input.ts"
@@ -11,7 +12,9 @@ const MainLive = GameLive.pipe(
   Layer.provide(Layer.mergeAll(Renderer.layer, Physics.layer, Input.layer, Sound.layer, Hud.layer))
 )
 
-const fiber = Effect.runFork(Layer.launch(MainLive))
+const fiber = Effect.runFork(
+  Effect.promise(() => preloadBearModels()).pipe(Effect.andThen(Layer.launch(MainLive)))
+)
 
 // On hot reload, interrupting the fiber runs every finalizer: the canvas, listeners,
 // audio and physics world are all cleaned up before the new version starts.

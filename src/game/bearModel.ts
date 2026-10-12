@@ -2,10 +2,28 @@ import * as THREE from "three"
 import { damp, flat, mesh } from "./util.ts"
 
 export interface BearLook {
+  /** Lets the model use different proportions for the grown-up and the little one. */
+  readonly kind: "mama" | "cub"
   readonly fur: THREE.ColorRepresentation
   readonly belly: THREE.ColorRepresentation
   /** Optional scarf colour, so the cub is easy to spot. */
   readonly scarf?: THREE.ColorRepresentation
+}
+
+/** Load any model assets. Awaited once at startup before any BearModel is constructed. */
+export const preloadBearModels = (): Promise<void> => Promise.resolve()
+
+export interface BearAnimState {
+  /** Horizontal speed in m/s. */
+  readonly speed: number
+  readonly maxSpeed: number
+  readonly grounded: boolean
+  /** Riding on Mama's back. */
+  readonly carried: boolean
+  /** Thrown through the air by Mama (can't steer). */
+  readonly flying: boolean
+  /** Vertical velocity in m/s, + is up. */
+  readonly verticalVelocity: number
 }
 
 /** Height from the model's origin (its feet) to the top of its ears, at scale 1. */
@@ -110,13 +128,23 @@ export class BearModel {
     this.swipeTime = 1
   }
 
+  /** Happy dance when a level is finished. */
+  celebrate() {
+    this.nod = 1
+  }
+
+  /** Shake off water after falling in. */
+  shake() {
+    this.squash = 0.6
+  }
+
   /** A happy little head bob, used for roars. */
   cheer() {
     this.nod = 1
   }
 
-  animate(dt: number, options: { speed: number; maxSpeed: number; grounded: boolean; carried: boolean }) {
-    const { speed, maxSpeed, grounded, carried } = options
+  animate(dt: number, state: BearAnimState) {
+    const { speed, maxSpeed, grounded, carried } = state
     const stride = Math.min(1, speed / maxSpeed)
     this.walkPhase += dt * (4 + 8 * stride)
 

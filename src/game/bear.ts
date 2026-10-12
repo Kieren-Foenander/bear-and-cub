@@ -222,6 +222,7 @@ export class Bear {
     }
     if (this.feetY < WATER_Y - 0.3 || this.position.y < -20) {
       this.ctx.onSplash(this)
+      this.model.shake()
       this.velocity.set(0, 0, 0)
       this.mode = "walk"
       this.teleport(this.lastSafe.clone().add(new THREE.Vector3(0, 0.3, 0)))
@@ -236,7 +237,9 @@ export class Bear {
       speed: this.horizontalSpeed,
       maxSpeed: this.spec.speed,
       grounded: this.grounded || carried,
-      carried
+      carried,
+      flying: this.mode === "flying",
+      verticalVelocity: carried ? 0 : this.velocity.y
     })
 
     // The coloured ring sits on the ground under the bear so you can always tell where you'll land.

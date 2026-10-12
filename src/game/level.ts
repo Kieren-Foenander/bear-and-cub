@@ -442,6 +442,8 @@ export class Level {
       if (close(mama) && close(cub)) {
         this.finished = true
         this.ctx.sound("success")
+        mama.model.celebrate()
+        cub.model.celebrate()
         this.ctx.toast("Hooray! You found the honey!")
         for (let i = 0; i < 4; i++) {
           this.ctx.particles.burst(SPOTS.honey.clone().add(new THREE.Vector3((i - 1.5) * 2, 3, 0)), {
