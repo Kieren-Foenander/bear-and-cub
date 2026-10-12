@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "bears",
+  "name": "bear-and-cub",
   "compatibility_date": "2026-10-01",
   // Static-assets-only Worker: Vite builds to ./dist and Cloudflare serves it.
   "assets": {

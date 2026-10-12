@@ -69,6 +69,8 @@ src/
 
 ## Deploy (Cloudflare Workers)
 
+Live at **https://bear-and-cub.kfoenander98.workers.dev**
+
 It's a static site served by Workers static assets (`wrangler.jsonc`):
 
 ```sh
