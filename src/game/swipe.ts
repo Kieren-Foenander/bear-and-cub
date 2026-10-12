@@ -63,9 +63,20 @@ export class Swipes {
     })
   }
 
+  /**
+   * Quiet help: every miss on a target makes it a little easier to hit (up to 1.75× the reach),
+   * so a little one who keeps just missing gets there instead of giving up.
+   */
+  private readonly misses = new Map<string, number>()
+
+  private assist(target: SwipeTarget) {
+    return 1 + Math.min(3, this.misses.get(target.id) ?? 0) * 0.25
+  }
+
   inReach(bear: Bear, target: SwipeTarget) {
     const dy = target.position().y - pawY(bear)
-    return horizontal(bear, target) < target.horizontalReach && Math.abs(dy) < target.verticalReach
+    const assist = this.assist(target)
+    return horizontal(bear, target) < target.horizontalReach * assist && Math.abs(dy) < target.verticalReach * assist
   }
 
   /** The bear swiped. Returns true if it hit something. */
@@ -81,6 +92,7 @@ export class Swipes {
         nearMiss = target
       }
     }
+    if (!hit && nearMiss && !bear.grounded) this.misses.set(nearMiss.id, (this.misses.get(nearMiss.id) ?? 0) + 1)
     if (!hit && nearMiss) {
       const below = nearMiss.position().y > pawY(bear)
       const text = bear.grounded ? "Jump first!" : below && bear.velocity.y > 0 ? "Wait for the top!" : "Too late, try again!"

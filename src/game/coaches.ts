@@ -85,7 +85,8 @@ export const bounceCoach = (
       if (!over || bear.velocity.y > 0) return { buttons: ["a"], label: "Bounce!" }
       const fallSpeed = Math.max(0.1, -bear.velocity.y)
       const timeToLand = (bear.feetY - top.y) / fallSpeed
-      if (timeToLand < window) return { buttons: ["a"], label: "NOW!", now: true }
+      // Matches the bear's own (adaptive) super-bounce window.
+      if (timeToLand < window + Math.min(3, bear.bounceAssist) * 0.08) return { buttons: ["a"], label: "NOW!", now: true }
       return { buttons: ["a"], label: "Get ready…" }
     }
   })

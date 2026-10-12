@@ -67,6 +67,8 @@ export class Bear {
   groundGap = 0
   /** Seconds since jump was last pressed. */
   sinceJumpPress = 99
+  /** How many super bounces we've just missed (makes the next one easier). */
+  bounceAssist = 0
   /** True for the one frame where we land after being in the air a while. */
   justLanded = false
 
@@ -200,7 +202,10 @@ export class Bear {
       // Mushrooms always bounce you; pressing jump just before landing makes it a big one.
       // Mama is too heavy for the big bounce.
       const heavy = this.spec.mass >= 3
-      const big = this.sinceJumpPress < SUPER_BOUNCE_WINDOW && this.mode === "walk" && !heavy
+      // Every small bounce (a missed big one) quietly widens the window a little.
+      const window = SUPER_BOUNCE_WINDOW + Math.min(3, this.bounceAssist) * 0.08
+      const big = this.sinceJumpPress < window && this.mode === "walk" && !heavy
+      this.bounceAssist = big ? Math.max(0, this.bounceAssist - 1) : this.bounceAssist + 1
       this.velocity.y = big ? this.surfaceBelow.superPower : this.surfaceBelow.power * (heavy ? 0.8 : 1)
       this.surfaceBelow.onBounce(big)
       this.ctx.rumble(this, big ? 0.7 : 0.25, big ? 200 : 80)
