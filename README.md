@@ -3,9 +3,12 @@
 A cosy, low-poly, co-op browser game for a parent and a little one. Mama Bear (the grown-up)
 helps Cub (the kid) get to places she can't reach on her own; Cub then does the important
 button-pressing bit to solve the puzzle. It's built to teach controller skills gently:
-big on-screen prompts, forgiving jumps, nothing that can really go wrong.
+big on-screen prompts that coach every move, forgiving jumps, and nothing that can really
+go wrong (falling in the water is just a splash and a reset).
 
-## Play
+**Play it:** https://bear-and-cub.kfoenander98.workers.dev
+
+## Play locally
 
 ```sh
 bun install
@@ -18,67 +21,78 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
 | --- | --- | --- |
 | Move | Left stick / d-pad | Left stick / d-pad |
 | Jump | A / ✕ | A / ✕ |
-| Action (pick up, lift, throw, push, roar) | B / ○ | B / ○ |
-| Swipe | X / □ | X / □ |
-| Free throw (while carrying Cub) | Y / △ | – |
+| Action (pick up, lift, throw, push, boop, roar) | B / ○ | B / ○ |
+| Swipe (hit things at the top of a jump) | X / □ | X / □ |
+| Throw Cub (while carrying) / call Cub back | Y / △ | – |
+| Pause | Start / Options | Start / Options |
 
 - **Two controllers:** controller 1 is Mama, controller 2 is Cub.
 - **One controller / keyboard:** press **Back / Select** (or **Tab**) to switch bears.
-- **Keyboard:** WASD move · Space jump · E action · Q swipe · R throw · Tab switch.
+- **Keyboard:** WASD move · Space jump · E action · Q swipe · R throw / call · Tab switch · Esc pause.
+- **Lost cub?** Mama presses **Y** and Cub hops straight onto her back.
 
-### The adventure so far
+## The adventure
 
-0. **The apple tree (practice):** Cub jumps and swipes an apple **at the top of her jump**.
-   The prompt goes `Jump!` → `Get ready…` → a flashing `NOW!`. Apples grow back, so she can
-   keep trying, and Mama can show her how.
-1. **The tall rock:** Mama picks Cub up and lifts her onto the ledge (stand on the glowing paw
-   circle). Cub pushes the boulder (mash B) and it smashes the wooden barricade.
-2. **The river:** Mama throws Cub across from the paw circle. Cub jumps and rings the bell
-   (same jump-then-swipe timing, a bit stricter), which lowers the bridge.
-3. **The honey tree:** get both bears there for a celebration.
+Five levels, each teaching one new controller skill (see [docs/skills.md](docs/skills.md)).
+Every level ends with both bears reaching the honey pot. Berries and butterflies are
+hidden everywhere for little explorers, and the level map remembers your best.
 
-Off the path: walk through flowers (they play notes), and hunt for butterflies hiding in the
-tall grass. Falling in the river is just a splash and a reset.
-
-The plan for teaching new skills over later levels is in [docs/skills.md](docs/skills.md).
+| # | Level | Teaches | Puzzles |
+| --- | --- | --- | --- |
+| 1 | 🌼 Sunny Meadow | Walk, push, jump-then-swipe | Apple-tree practice · Mama lifts Cub onto a ledge to push a boulder · Mama throws Cub over the river to ring the bell |
+| 2 | 💦 Creek Hop | Run and jump at the same time | Three streams, each wider · push a tree over as a bridge for Mama · hop up rock pillars and knock down a pinecone to drop a ramp |
+| 3 | 🐸 Lily Pond | Landing on little things | Stepping stones · lily pads that sink under Mama · boop the frog to call the turtles up as Mama's path |
+| 4 | 🍄 Mushroom Woods | Timing against moving things | Super-bounce (press jump just before you land) over a fence · ride floating logs · seesaw launch · magic mushroom steps |
+| 5 | 🍯 Honey Mountain | Everything together | A four-tier climb using every skill, ending with the giant honeycomb |
 
 ## How it's built
 
 - **[three.js](https://threejs.org)** for rendering. Everything is procedural flat-shaded
-  geometry; there are no model files yet.
+  geometry, including the rigged, animated bears (`src/game/models/`); there are no model files.
 - **[Rapier](https://rapier.rs)** (WASM) for physics: kinematic character controllers for the
-  bears, dynamic bodies for debris.
-- **[Effect](https://effect.website) v4** for the app shell. The renderer, physics world, input,
-  audio and HUD are `Context.Service`s with `Layer`s, and their resources (canvas, event
-  listeners, AudioContext, WASM world) are scoped. On Vite hot reload the main fiber is
-  interrupted, so everything is torn down cleanly before the new version starts. The per-frame
-  game loop is plain mutable TypeScript, because allocating Effects 60 times a second isn't worth it.
+  bears, moving/sinking/bouncy surfaces, dynamic debris.
+- **[Effect](https://effect.website) v4** for the app shell. The renderer, physics engine, input,
+  audio, save data and HUD are `Context.Service`s with `Layer`s, and their resources (canvas,
+  listeners, AudioContext) are scoped, so Vite hot reload tears everything down cleanly.
+  Saved progress is validated with `Schema` on load. The per-frame game loop is plain mutable
+  TypeScript, because allocating Effects 60 times a second isn't worth it.
 
 ```
 src/
-  main.ts              composes the layers and launches the game
-  services/            Effect services: Renderer, Physics, Input, Sound, Hud
+  main.ts                composes the layers and launches the game
+  services/              Effect services: Renderer, Physics, Input, Sound, Save, Hud
   game/
-    Game.ts            frame loop + wiring
-    bear.ts            bear movement (Rapier character controller), carry/launch
-    bearModel.ts       the low-poly bear and its animations
-    coop.ts            Mama's pick up / lift / throw / put down
-    interactions.ts    "stand here and press this" prompts (press, mash, coaching guides)
-    swipe.ts           swipe reach + timing coach (jump, then swipe at the top)
-    swipeThings.ts     the bell and the practice apple tree
-    level.ts           cliffs, boulder + barricade, lever + bridge, honey tree, scenery
-    terrain.ts         heightmap ground, river, water
-    nature.ts          trees, rocks, grass, flowers, butterflies
-    controls.ts        which controller drives which bear
-    camera.ts          shared camera that keeps both bears in view
-    hud.ts, prompts.ts big friendly UI
+    Game.ts              the session: menus, saving, loading levels, frame loop
+    stage.ts             one running level (its own scene + physics world)
+    levels/              one file per level + the LevelDef types
+    bear.ts              bear movement (character controller, platforms, bouncing)
+    bearModel.ts         bear model + animation (rig in models/)
+    coop.ts              Mama's pick up / lift / throw / call, and lift/throw spots
+    interactions.ts      "stand here and press this" prompts (press, mash, coaching guides)
+    coaches.ts           timing coaches: running jumps, bounces, riding moving things
+    swipe.ts             swipe reach + the jump-then-swipe coach
+    swipeThings.ts       bell, apple tree, hanging pinecone / flower / honeycomb
+    props.ts             cliffs, bridges, ramps, gates, seesaws, mushrooms, stones…
+    surfaces.ts          moving / sinking platforms and bouncy mushrooms
+    terrain.ts           heightmap ground + water
+    nature.ts            trees, rocks, grass, flowers, butterflies
+    critters.ts          frog, turtles, dragonflies
+    collectibles.ts      berries
+    menus.ts, hud.ts, prompts.ts   big friendly UI
 ```
+
+## Developing
+
+- `?level=3` jumps straight into a level; `?unlock` unlocks every level on the map.
+- `/model-preview.html` (dev server only) shows both bears with buttons for every animation.
+- `bun run playtest` (with `bun run dev` running on port 5173) plays every level start to
+  finish headlessly with scripted input and checks each one completes. Tests live in
+  `tools/tests/`; `bun tools/playtest.ts <test.js> --url <url>` runs one and can save
+  screenshots to `/tmp/shots/`.
 
 ## Deploy (Cloudflare Workers)
 
-Live at **https://bear-and-cub.kfoenander98.workers.dev**
-
-It's a static site served by Workers static assets (`wrangler.jsonc`):
+A static site served by Workers static assets (`wrangler.jsonc`):
 
 ```sh
 bunx wrangler login   # once

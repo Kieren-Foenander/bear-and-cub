@@ -86,7 +86,7 @@ const V = (x, y, z) => S.stage.mama.position.clone().set(x, y, z)
 const jumpSwipe = () => { run(2, ['Space']); for (let i = 0; i < 80; i++) { if (prompts().some(p => p.includes('[NOW]'))) { run(2, ['KeyQ']); run(3, []); return i } run(1) } run(1, []); return -1 }
 `
 try {
-  await page.evaluate(`(async () => { ${helpers}\n${body}\n })()`)
+  await page.evaluate(`(async () => { ${helpers}\n{\n${body}\n}\n })()`)
 } catch (error) {
   console.log("TEST FAILED:", (error as Error).message)
   await page.screenshot({ path: "/tmp/shots/failure.png" })
