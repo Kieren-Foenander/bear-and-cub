@@ -33,7 +33,7 @@ const COACH_RANGE = 2.6
 const HINT_TIME = 1.4
 
 export class Swipes {
-  private readonly targets: Array<SwipeTarget> = []
+  readonly targets: Array<SwipeTarget> = []
   /** A short coaching message after a miss, per bear. */
   private readonly hints = new Map<BearId, { text: string; time: number }>()
 

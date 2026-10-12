@@ -21,6 +21,7 @@ export type SoundName =
   | "pop"
   | "miss"
   | "croak"
+  | "creak"
   | "splashSmall"
   | "success"
   | "swap"
@@ -132,6 +133,9 @@ export class Sound extends Context.Service<Sound, {
             return tone(330, { type: "sawtooth", slideTo: 240, duration: 0.3, volume: 0.2 })
           case "swipe":
             return noise({ duration: 0.18, filter: 600, sweepTo: 4000, volume: 0.3 })
+          case "creak":
+            tone(220, { type: "sawtooth", slideTo: 330, duration: 0.25, volume: 0.15 })
+            return tone(300, { type: "triangle", slideTo: 180, duration: 0.3, delay: 0.25, volume: 0.2 })
           case "croak":
             tone(140, { type: "square", slideTo: 110, duration: 0.14, volume: 0.25 })
             return tone(160, { type: "square", slideTo: 120, duration: 0.18, delay: 0.2, volume: 0.25 })

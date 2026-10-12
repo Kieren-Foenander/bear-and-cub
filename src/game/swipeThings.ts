@@ -235,7 +235,8 @@ export class HangingPinecone {
     ctx: SwipeThingContext,
     at: THREE.Vector3,
     onDrop: () => void,
-    lift = 1.6
+    lift = 1.6,
+    style: "pinecone" | "bellflower" = "pinecone"
   ) {
     const { scene, rapier, world, swipes } = ctx
     const ground = at.y
@@ -243,12 +244,13 @@ export class HangingPinecone {
     const armY = ground + 3.4
 
     const wood = flat("#8a5a36")
+    // The post stands behind the thing (away from the camera) so you can walk up from any side.
     const post = mesh(new THREE.BoxGeometry(0.3, 3.6, 0.3), wood)
-    post.position.set(at.x - 1.4, ground + 1.8, at.z)
+    post.position.set(at.x, ground + 1.8, at.z - 1.5)
     scene.add(post)
-    world.createCollider(rapier.ColliderDesc.cuboid(0.15, 1.8, 0.15).setTranslation(at.x - 1.4, ground + 1.8, at.z))
-    const arm = mesh(new THREE.BoxGeometry(1.8, 0.22, 0.22), wood)
-    arm.position.set(at.x - 0.6, armY, at.z)
+    world.createCollider(rapier.ColliderDesc.cuboid(0.15, 1.8, 0.15).setTranslation(at.x, ground + 1.8, at.z - 1.5))
+    const arm = mesh(new THREE.BoxGeometry(0.22, 0.22, 1.9), wood)
+    arm.position.set(at.x, armY, at.z - 0.65)
     scene.add(arm)
 
     const ropeLength = armY - target.y - 0.3
@@ -257,12 +259,24 @@ export class HangingPinecone {
     scene.add(this.rope)
 
     this.cone = new THREE.Group()
-    for (let i = 0; i < 4; i++) {
-      const scale = 0.42 - i * 0.07
-      const layer = mesh(new THREE.ConeGeometry(scale, 0.3, 7), this.material)
-      layer.position.y = -i * 0.18
-      layer.rotation.x = Math.PI
-      this.cone.add(layer)
+    if (style === "bellflower") {
+      // A glowing blue bell flower: petals flare out at the bottom.
+      this.material.color.set("#6f8dff")
+      this.material.emissive.set("#9fb6ff")
+      this.material.emissiveIntensity = 0.3
+      const profile = [new THREE.Vector2(0.05, 0.2), new THREE.Vector2(0.25, 0.1), new THREE.Vector2(0.32, -0.25), new THREE.Vector2(0.5, -0.45)]
+      const bell = mesh(new THREE.LatheGeometry(profile, 6), this.material)
+      const stamen = mesh(new THREE.IcosahedronGeometry(0.1, 0), flat("#ffe066"))
+      stamen.position.y = -0.4
+      this.cone.add(bell, stamen)
+    } else {
+      for (let i = 0; i < 4; i++) {
+        const scale = 0.42 - i * 0.07
+        const layer = mesh(new THREE.ConeGeometry(scale, 0.3, 7), this.material)
+        layer.position.y = -i * 0.18
+        layer.rotation.x = Math.PI
+        this.cone.add(layer)
+      }
     }
     this.cone.position.copy(target).add(new THREE.Vector3(0, 0.25, 0))
     scene.add(this.cone)
@@ -283,7 +297,8 @@ export class HangingPinecone {
           onDrop()
         },
         glow: (amount) => {
-          this.material.emissiveIntensity = damp(this.material.emissiveIntensity, amount * 0.7, 12, 1 / 60)
+          const resting = style === "bellflower" ? 0.3 : 0
+          this.material.emissiveIntensity = damp(this.material.emissiveIntensity, resting + amount * 0.7, 12, 1 / 60)
         }
       },
       { who: "cub" }

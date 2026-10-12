@@ -45,7 +45,7 @@ export interface ActivePrompt {
 }
 
 export class Interactions {
-  private readonly list: Array<Interaction> = []
+  readonly list: Array<Interaction> = []
   private readonly progress = new Map<string, number>()
   /** Prompts that should be on screen this frame. */
   active: Array<ActivePrompt> = []

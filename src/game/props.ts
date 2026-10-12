@@ -94,9 +94,14 @@ export const logMesh = (length: number, radius = 0.45) => {
 }
 
 /** A big spotty mushroom; returns the cap collider so it can be made bouncy. */
-export const mushroom = (env: Env, x: number, z: number, options: { capRadius?: number; height?: number; color?: THREE.ColorRepresentation } = {}) => {
+export const mushroom = (
+  env: Env,
+  x: number,
+  z: number,
+  options: { capRadius?: number; height?: number; color?: THREE.ColorRepresentation; solid?: boolean } = {}
+) => {
   const { scene, rapier, world, terrain } = env
-  const { capRadius = 1.4, height = 1.2, color = "#e5484d" } = options
+  const { capRadius = 1.4, height = 1.2, color = "#e5484d", solid = true } = options
   const y = terrain.heightAt(x, z)
   const group = new THREE.Group()
   group.position.set(x, y, z)
@@ -115,11 +120,12 @@ export const mushroom = (env: Env, x: number, z: number, options: { capRadius?: 
     group.add(spot)
   }
   scene.add(group)
-  world.createCollider(rapier.ColliderDesc.cylinder(height / 2, capRadius * 0.35).setTranslation(x, y + height / 2, z))
-  const capCollider = world.createCollider(
-    rapier.ColliderDesc.cylinder(0.18, capRadius * 0.95).setTranslation(x, y + height + capRadius * 0.6 - 0.25, z)
-  )
-  return { group, cap, capCollider, top: y + height + capRadius * 0.6 - 0.07 }
+  const makeSolid = () => {
+    world.createCollider(rapier.ColliderDesc.cylinder(height / 2, capRadius * 0.35).setTranslation(x, y + height / 2, z))
+    return world.createCollider(rapier.ColliderDesc.cylinder(0.18, capRadius * 0.95).setTranslation(x, y + height + capRadius * 0.6 - 0.25, z))
+  }
+  const capCollider = solid ? makeSolid() : null
+  return { group, cap, capCollider, makeSolid, top: y + height + capRadius * 0.6 - 0.07 }
 }
 
 /** A wooden sign with an emoji picture on it, to give little readers a hint. */
@@ -367,5 +373,133 @@ export class FallingTree {
     // Invisible rails so a careful bear doesn't slip off the log.
     box(0.1, 1.2, this.length / 2 - 1, local(-this.radius - 0.15, 1, this.length / 2))
     box(0.1, 1.2, this.length / 2 - 1, local(this.radius + 0.15, 1, this.length / 2))
+  }
+}
+
+/** A wooden fence with a gate in the middle that swings open. */
+export class Gate {
+  private readonly left = new THREE.Group()
+  private readonly right = new THREE.Group()
+  private readonly collider: RAPIER.Collider
+  private openAmount = 0
+  open = false
+
+  constructor(
+    private readonly env: Env,
+    center: THREE.Vector3,
+    readonly halfWidth: number,
+    readonly height: number,
+    fenceTo: { minX: number; maxX: number }
+  ) {
+    const { scene, rapier, world } = env
+    const wood = flat("#a0683c")
+    const dark = flat("#7d4f2c")
+    // The fence either side of the gate.
+    const fence = (x0: number, x1: number) => {
+      const width = x1 - x0
+      for (let x = x0 + 0.4; x < x1; x += 0.8) {
+        const post = mesh(new THREE.BoxGeometry(0.6, height + Math.sin(x * 3) * 0.2, 0.3), Math.round(x * 2) % 2 ? wood : dark)
+        post.position.set(x, center.y + height / 2, center.z)
+        scene.add(post)
+      }
+      world.createCollider(rapier.ColliderDesc.cuboid(width / 2, height / 2 + 1, 0.4).setTranslation((x0 + x1) / 2, center.y + height / 2 - 1, center.z))
+    }
+    fence(fenceTo.minX, center.x - halfWidth)
+    fence(center.x + halfWidth, fenceTo.maxX)
+    // The two doors, hinged at the outside.
+    for (const [door, side] of [[this.left, -1], [this.right, 1]] as const) {
+      for (let i = 0; i < 3; i++) {
+        const plank = mesh(new THREE.BoxGeometry(halfWidth / 3 - 0.06, height * 0.9, 0.22), i % 2 ? wood : dark)
+        plank.position.set(-side * (halfWidth / 6 + (i * halfWidth) / 3), height * 0.45, 0)
+        door.add(plank)
+      }
+      const brace = mesh(new THREE.BoxGeometry(halfWidth, 0.25, 0.26), dark)
+      brace.position.set(-side * halfWidth * 0.5, height * 0.5, 0.05)
+      brace.rotation.z = side * 0.5
+      door.add(brace)
+      door.position.set(center.x + side * halfWidth, center.y, center.z)
+      scene.add(door)
+    }
+    this.collider = world.createCollider(rapier.ColliderDesc.cuboid(halfWidth, height / 2 + 1, 0.4).setTranslation(center.x, center.y + height / 2 - 1, center.z))
+  }
+
+  openUp() {
+    if (this.open) return
+    this.open = true
+    this.env.world.removeCollider(this.collider, true)
+  }
+
+  update(dt: number) {
+    if (!this.open) return
+    this.openAmount = Math.min(1, this.openAmount + dt * 1.2)
+    const angle = (1 - (1 - this.openAmount) ** 3) * (Math.PI / 2) * 0.95
+    this.left.rotation.y = angle
+    this.right.rotation.y = -angle
+  }
+}
+
+/**
+ * A seesaw: a plank on a log. When the big bear lands on one end, whoever is standing on the
+ * other end goes flying.
+ */
+export class Seesaw {
+  readonly group = new THREE.Group()
+  private readonly plank = new THREE.Group()
+  private tilt = 0
+  private tiltTarget = 0
+  readonly endA: THREE.Vector3
+  readonly endB: THREE.Vector3
+  private readonly along: THREE.Vector3
+
+  constructor(env: Env, center: THREE.Vector3, readonly halfLength: number, yaw: number) {
+    const { scene, rapier, world } = env
+    const base = logMesh(1.6, 0.4)
+    base.rotation.y = Math.PI / 2
+    this.group.add(base)
+    const board = mesh(new THREE.BoxGeometry(halfLength * 2, 0.18, 1.6), flat("#c9a46a"))
+    this.plank.add(board)
+    for (const side of [-1, 1]) {
+      const pad = mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.06, 10), flat(side < 0 ? "#ff9ad5" : "#5aa9ff"), { castShadow: false })
+      pad.position.set(side * (halfLength - 0.7), 0.12, 0)
+      this.plank.add(pad)
+    }
+    this.plank.position.y = 0.45
+    this.group.add(this.plank)
+    this.group.position.copy(center)
+    this.group.rotation.y = yaw
+    scene.add(this.group)
+    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
+    world.createCollider(
+      rapier.ColliderDesc.cuboid(halfLength, 0.15, 0.8).setTranslation(center.x, center.y + 0.45, center.z).setRotation(rotation)
+    )
+    const along = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation)
+    this.along = along
+    this.endA = center.clone().addScaledVector(along, -(halfLength - 0.7)).setY(center.y + 0.55)
+    this.endB = center.clone().addScaledVector(along, halfLength - 0.7).setY(center.y + 0.55)
+  }
+
+  /** Which half of the plank a point is standing on: -1 = A (pink), 1 = B (blue), 0 = off it. */
+  sideOf(feet: THREE.Vector3) {
+    const offset = feet.clone().sub(this.group.position)
+    const along = offset.x * this.along.x + offset.z * this.along.z
+    const across = -offset.x * this.along.z + offset.z * this.along.x
+    if (Math.abs(across) > 1 || Math.abs(along) > this.halfLength + 0.3 || Math.abs(offset.y - 0.6) > 0.7) return 0
+    return along < -0.4 ? -1 : along > 0.4 ? 1 : 0
+  }
+
+  /** Tip the plank: -1 = A end down, 1 = B end down. */
+  rest(side: -1 | 0 | 1) {
+    this.tiltTarget = side * 0.18
+  }
+
+  /** Thwack! B end slams down, A end flicks up. */
+  slam() {
+    this.tilt = -0.35
+    this.tiltTarget = 0.2
+  }
+
+  update(dt: number) {
+    this.tilt += (this.tiltTarget - this.tilt) * Math.min(1, dt * 8)
+    this.plank.rotation.z = -this.tilt
   }
 }

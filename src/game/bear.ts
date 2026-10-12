@@ -65,6 +65,8 @@ export class Bear {
   groundGap = 0
   /** Seconds since jump was last pressed. */
   sinceJumpPress = 99
+  /** True for the one frame where we land after being in the air a while. */
+  justLanded = false
 
   private coyote = 0
   private jumpBuffer = 0
@@ -194,8 +196,10 @@ export class Bear {
     this.jumpBuffer = pad?.pressed.a && !flying ? JUMP_BUFFER : this.jumpBuffer - dt
     if (onBouncer && this.surfaceBelow?.kind === "bouncer") {
       // Mushrooms always bounce you; pressing jump just before landing makes it a big one.
-      const big = this.sinceJumpPress < SUPER_BOUNCE_WINDOW && this.mode === "walk"
-      this.velocity.y = big ? this.surfaceBelow.superPower : this.surfaceBelow.power
+      // Mama is too heavy for the big bounce.
+      const heavy = this.spec.mass >= 3
+      const big = this.sinceJumpPress < SUPER_BOUNCE_WINDOW && this.mode === "walk" && !heavy
+      this.velocity.y = big ? this.surfaceBelow.superPower : this.surfaceBelow.power * (heavy ? 0.8 : 1)
       this.surfaceBelow.onBounce(big)
       this.model.land(0.8)
       this.sinceJumpPress = 99
@@ -239,6 +243,7 @@ export class Bear {
 
     const wasGrounded = this.grounded
     this.grounded = this.kcc.computedGrounded()
+    this.justLanded = this.grounded && !wasGrounded && this.airTime > 0.25
     // Bonked our head on something.
     if (desired.y > 0 && moved.y < desired.y * 0.5) this.velocity.y = Math.min(this.velocity.y, 0)
 

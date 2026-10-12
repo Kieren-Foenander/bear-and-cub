@@ -58,3 +58,87 @@ export const runJumpCoach = (
     }
   })
 }
+
+/**
+ * Coaching for a bouncy mushroom: "Jump on!" when you're next to it, then a flashing "NOW!" just
+ * before you land on it so you press jump at the right moment for a super bounce.
+ */
+export const bounceCoach = (
+  interactions: Interactions,
+  options: { top: THREE.Vector3; radius: number; who?: BearId; enabled?: () => boolean; window?: number }
+) => {
+  const { top, radius, who = "cub", enabled = () => true, window = 0.24 } = options
+  const anchor = top.clone().add(new THREE.Vector3(0, 3.2, 0))
+  interactions.add({
+    id: `bounce-${nextId++}`,
+    who,
+    kind: "guide",
+    buttons: [],
+    label: "",
+    anchor: () => anchor,
+    inRange: (bear) => Math.hypot(bear.position.x - top.x, bear.position.z - top.z) < radius + 2.5,
+    enabled,
+    view: (bear) => {
+      if (bear.mode !== "walk") return null
+      const over = Math.hypot(bear.position.x - top.x, bear.position.z - top.z) < radius + 0.3
+      if (bear.grounded && !over) return { buttons: ["a"], label: "Jump on!" }
+      if (!over || bear.velocity.y > 0) return { buttons: ["a"], label: "Bounce!" }
+      const fallSpeed = Math.max(0.1, -bear.velocity.y)
+      const timeToLand = (bear.feetY - top.y) / fallSpeed
+      if (timeToLand < window) return { buttons: ["a"], label: "NOW!", now: true }
+      return { buttons: ["a"], label: "Get ready…" }
+    }
+  })
+}
+
+/**
+ * Coaching for hopping onto something that moves past (a floating log): "Wait…" until it's in
+ * front of you, then a flashing "JUMP!".
+ */
+export const rideCoach = (
+  interactions: Interactions,
+  options: {
+    /** The edge you jump from: anywhere along this line (fixed z) between minX and maxX. */
+    edgeZ: number
+    minX: number
+    maxX: number
+    y: number
+    /** -1 if you jump towards -z. */
+    direction: 1 | -1
+    /** Where the thing you're aiming for is right now. */
+    target: () => THREE.Vector3
+    /** How fast it's moving (so we can tell you to jump a little early). */
+    velocity: () => THREE.Vector3
+    /** How far either side of the bear the target can be and still be a good jump. */
+    catchWidth: number
+    who?: BearId
+    enabled?: () => boolean
+  }
+) => {
+  const { edgeZ, minX, maxX, y, direction, target, velocity, catchWidth, who = "cub", enabled = () => true } = options
+  const anchor = new THREE.Vector3()
+  let lastX = 0
+  interactions.add({
+    id: `ride-${nextId++}`,
+    who,
+    kind: "guide",
+    buttons: [],
+    label: "",
+    anchor: () => anchor.set(lastX, y + 2.4, edgeZ),
+    inRange: (bear) => {
+      const along = (bear.position.z - edgeZ) * -direction
+      const inside = along > -3 && along < 0.6 && bear.position.x > minX && bear.position.x < maxX && Math.abs(bear.feetY - y) < 1
+      if (inside) lastX = bear.position.x
+      return inside
+    },
+    enabled,
+    view: (bear) => {
+      if (bear.mode !== "walk" || !bear.grounded) return null
+      // Where will it be by the time we land on it?
+      const flightTime = 0.5
+      const lead = target().x + velocity().x * flightTime - bear.position.x
+      if (Math.abs(lead) < catchWidth) return { buttons: ["a"], label: "JUMP!", now: true }
+      return { buttons: [], label: "Wait for the log…" }
+    }
+  })
+}

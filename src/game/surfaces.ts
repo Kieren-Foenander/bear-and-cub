@@ -31,7 +31,7 @@ export type Surface = Platform | Bouncer
 
 export class Surfaces {
   private readonly byCollider = new Map<number, Surface>()
-  private readonly platforms: Array<Platform> = []
+  readonly platforms: Array<Platform> = []
   private time = 0
 
   constructor(

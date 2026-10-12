@@ -181,7 +181,7 @@ export class Stage {
       const cloud = new THREE.Group()
       const puffs = 3 + (i % 3)
       for (let j = 0; j < puffs; j++) {
-        const puff = mesh(new THREE.IcosahedronGeometry(2 + Math.random() * 1.5, 0), flat("#ffffff"), { receiveShadow: false })
+        const puff = mesh(new THREE.IcosahedronGeometry(2 + Math.random() * 1.5, 0), flat("#ffffff"), { receiveShadow: false, castShadow: false })
         puff.position.set(j * 2.4 - puffs, Math.random(), Math.random() * 1.5)
         cloud.add(puff)
       }
