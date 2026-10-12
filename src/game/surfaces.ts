@@ -3,7 +3,8 @@ import * as THREE from "three"
 
 /**
  * A platform that moves. Bears standing on it move with it.
- * `motion` returns where the platform should be at time `t`; `riders` is how many bears are on it.
+ * `motion` returns where the platform should be at time `t`; `riders` is the total mass standing on
+ * it (Cub weighs 1, Mama weighs 4), so lily pads can sink under Mama.
  */
 export interface Platform {
   readonly kind: "platform"

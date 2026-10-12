@@ -281,7 +281,7 @@ export class Bear {
     const halfHeight = this.spec.halfHeight + this.spec.radius
     this.groundGap = hit ? hit.timeOfImpact - halfHeight : 40
     this.surfaceBelow = hit ? this.ctx.surfaces.surfaceFor(hit.collider) : undefined
-    if (this.surfaceBelow?.kind === "platform" && this.grounded) this.surfaceBelow.riders++
+    if (this.surfaceBelow?.kind === "platform" && this.grounded) this.surfaceBelow.riders += this.spec.mass
     this.ring.position.set(this.position.x, Math.max(this.position.y - (hit?.timeOfImpact ?? halfHeight), this.ctx.terrain.waterY) + 0.06, this.position.z)
   }
 
@@ -304,7 +304,7 @@ export class Bear {
 
   /** Is there solid, dry ground all around us (not standing on the edge of a drop)? */
   private solidAround() {
-    const reach = this.spec.radius + 0.5
+    const reach = this.spec.radius + 0.2
     for (const [dx, dz] of [[reach, 0], [-reach, 0], [0, reach], [0, -reach]] as const) {
       this.ray.origin.x = this.position.x + dx
       this.ray.origin.y = this.position.y
