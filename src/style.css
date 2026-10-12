@@ -1,0 +1,382 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #9fd8ff;
+  font-family: "Baloo 2", "Comic Sans MS", system-ui, sans-serif;
+  user-select: none;
+}
+
+#app canvas {
+  display: block;
+}
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  color: #3b2a1e;
+}
+
+/* ---------- Start screen ---------- */
+
+.start-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: radial-gradient(ellipse at center, rgba(255, 248, 230, 0.75), rgba(255, 248, 230, 0.35) 60%, transparent);
+  transition: opacity 0.6s;
+  pointer-events: auto;
+}
+
+.start-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.title {
+  font-size: clamp(64px, 12vw, 150px);
+  font-weight: 800;
+  line-height: 0.9;
+  color: #8b5a3c;
+  text-shadow: 0 6px 0 #fff, 0 10px 24px rgba(0, 0, 0, 0.15);
+}
+
+.title span {
+  color: #ff6fa8;
+}
+
+.subtitle {
+  font-size: 30px;
+  font-weight: 600;
+  color: #5d4433;
+}
+
+.start-press {
+  margin-top: 24px;
+  font-size: 44px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.start-help {
+  margin-top: 28px;
+  font-size: 20px;
+  text-align: center;
+  line-height: 1.5;
+  color: #5d4433;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 14px 24px;
+  border-radius: 20px;
+}
+
+.start-help em {
+  font-style: normal;
+  font-weight: 800;
+}
+
+.start-help .keys {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  --btn: #3fbf4f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 50%;
+  background: var(--btn);
+  color: white;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0.12em 0 rgba(0, 0, 0, 0.25), inset 0 -0.1em 0 rgba(0, 0, 0, 0.15);
+  border: 0.08em solid white;
+}
+
+.btn.wide {
+  width: auto;
+  padding: 0 0.5em;
+  border-radius: 0.5em;
+  font-size: 0.75em;
+  height: 2.1em;
+}
+
+/* ---------- Floating prompts ---------- */
+
+.prompt {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  will-change: transform;
+}
+
+.prompt-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: pop-in 0.35s cubic-bezier(0.3, 1.6, 0.5, 1), bob 1.2s ease-in-out 0.35s infinite;
+}
+
+.prompt.cub .prompt-buttons {
+  font-size: 54px;
+}
+
+.prompt.mama .prompt-buttons {
+  font-size: 34px;
+}
+
+.prompt .plus {
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.prompt.mash .btn {
+  animation: mash 0.4s ease-in-out infinite;
+}
+
+.prompt-label {
+  font-weight: 800;
+  color: white;
+  background: rgba(59, 42, 30, 0.75);
+  padding: 2px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.prompt.cub .prompt-label {
+  font-size: 30px;
+  background: rgba(214, 69, 128, 0.85);
+}
+
+.prompt.mama .prompt-label {
+  font-size: 20px;
+  background: rgba(46, 117, 201, 0.85);
+}
+
+.prompt-bar {
+  width: 140px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 3px solid white;
+  overflow: hidden;
+}
+
+.prompt-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #ffd84d, #8fe388);
+  transition: width 0.08s linear;
+}
+
+/* ---------- Player cards ---------- */
+
+.players {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player {
+  padding: 6px 18px 6px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  border-left: 10px solid;
+  opacity: 0.55;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.player.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.04);
+  transform-origin: left center;
+}
+
+.player.mama {
+  border-color: #5aa9ff;
+}
+
+.player.cub {
+  border-color: #ff6fa8;
+}
+
+.player-name {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.player-who {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.swap-hint {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+/* ---------- Objective, counter, toast ---------- */
+
+.objective {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 40px);
+  text-align: center;
+  font-size: clamp(20px, 3.2vw, 34px);
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 6px 28px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.objective:empty {
+  display: none;
+}
+
+.objective.pop {
+  animation: banner-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.counter {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-size: 36px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 4px 22px;
+  border-radius: 999px;
+}
+
+.counter.pop {
+  animation: counter-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+.toast {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 6px 0 #8b5a3c, 0 10px 30px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1), opacity 0.3s;
+}
+
+.toast.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.sound-hint {
+  position: absolute;
+  top: 96px;
+  right: 18px;
+  font-size: 18px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
+/* ---------- Animations ---------- */
+
+@keyframes pop-in {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes mash {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.85) translateY(4px);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes banner-pop {
+  from {
+    transform: translateX(-50%) scale(0.6);
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes counter-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.4) rotate(-6deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
