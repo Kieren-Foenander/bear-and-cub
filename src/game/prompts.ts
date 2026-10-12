@@ -45,22 +45,26 @@ export class Prompts {
   update(prompts: ReadonlyArray<ActivePrompt>, camera: THREE.Camera, styleFor: (prompt: ActivePrompt) => ButtonStyle) {
     const seen = new Set<string>()
     for (const prompt of prompts) {
-      const { interaction, bear, progress } = prompt
+      const { interaction, bear, progress, view } = prompt
       const style = styleFor(prompt)
-      const key = `${interaction.id}:${style}`
+      // A new key when the buttons change, so the new button pops in.
+      const key = `${interaction.id}:${style}:${view.buttons.join("+")}`
       seen.add(key)
       let el = this.elements.get(key)
       if (!el) {
         el = document.createElement("div")
         el.className = `prompt ${bear.spec.id} ${interaction.kind}`
-        const buttons = interaction.buttons.map((b) => buttonHtml(b, style)).join(`<span class="plus">+</span>`)
+        const buttons = view.buttons.map((b) => buttonHtml(b, style)).join(`<span class="plus">+</span>`)
         el.innerHTML = `
           <div class="prompt-buttons">${buttons}</div>
-          <div class="prompt-label">${interaction.label}</div>
-          ${interaction.kind === "press" ? "" : `<div class="prompt-bar"><div class="prompt-fill"></div></div>`}`
+          <div class="prompt-label"></div>
+          ${interaction.kind === "mash" ? `<div class="prompt-bar"><div class="prompt-fill"></div></div>` : ""}`
         this.root.appendChild(el)
         this.elements.set(key, el)
       }
+      const label = el.querySelector<HTMLElement>(".prompt-label")!
+      if (label.textContent !== view.label) label.textContent = view.label
+      el.classList.toggle("now", view.now === true)
       this.projected.copy(interaction.anchor()).project(camera)
       const x = (this.projected.x * 0.5 + 0.5) * window.innerWidth
       const y = (-this.projected.y * 0.5 + 0.5) * window.innerHeight

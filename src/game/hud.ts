@@ -42,7 +42,7 @@ export class GameHud {
        <div class="start-help">
          <div><b>1 controller?</b> Press <em>Back / Select</em> (or <em>Tab</em>) to switch bears.</div>
          <div><b>2 controllers?</b> Controller 1 is Mama, controller 2 is Cub.</div>
-         <div class="keys">Keyboard: <em>WASD</em> move · <em>Space</em> jump · <em>E</em> action · <em>Q</em>/<em>R</em> X/Y · <em>Tab</em> switch</div>
+         <div class="keys">Keyboard: <em>WASD</em> move · <em>Space</em> jump · <em>E</em> action · <em>Q</em> swipe · <em>R</em> throw · <em>Tab</em> switch</div>
        </div>`
     )
     this.players = el("players")

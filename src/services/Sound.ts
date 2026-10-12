@@ -16,7 +16,10 @@ export type SoundName =
   | "push"
   | "roar"
   | "cubRoar"
-  | "lever"
+  | "swipe"
+  | "bell"
+  | "pop"
+  | "miss"
   | "success"
   | "swap"
 
@@ -125,9 +128,19 @@ export class Sound extends Context.Service<Sound, {
           case "cubRoar":
             noise({ duration: 0.3, filter: 1400, volume: 0.25 })
             return tone(330, { type: "sawtooth", slideTo: 240, duration: 0.3, volume: 0.2 })
-          case "lever":
-            tone(300, { type: "square", duration: 0.1, volume: 0.25 })
-            return tone(450, { type: "square", duration: 0.1, delay: 0.1, volume: 0.25 })
+          case "swipe":
+            return noise({ duration: 0.18, filter: 600, sweepTo: 4000, volume: 0.3 })
+          case "miss":
+            return tone(330, { type: "sine", slideTo: 260, duration: 0.2, volume: 0.2 })
+          case "pop":
+            tone(600, { type: "sine", slideTo: 1200, duration: 0.1, volume: 0.4 })
+            return tone(PENTATONIC[4]!, { type: "triangle", duration: 0.25, delay: 0.08, volume: 0.3 })
+          case "bell":
+            // A few inharmonic partials with a long ring is what makes it sound like a bell.
+            ;[1, 2.76, 5.4, 8.93].forEach((ratio, i) =>
+              tone(440 * ratio, { type: "sine", duration: 2.2 - i * 0.4, volume: 0.35 / (i + 1) })
+            )
+            return
           case "success":
             ;[0, 2, 4, 5].forEach((n, i) => tone(PENTATONIC[n]!, { type: "triangle", duration: 0.35, delay: i * 0.12 }))
             return tone(PENTATONIC[7]!, { type: "triangle", duration: 0.8, delay: 0.5 })

@@ -23,6 +23,7 @@ export class BearModel {
   private walkPhase = 0
   private squash = 0
   private nod = 0
+  private swipeTime = 0
 
   constructor(look: BearLook, scale: number) {
     const fur = flat(look.fur)
@@ -104,6 +105,11 @@ export class BearModel {
     this.squash = Math.max(this.squash, strength)
   }
 
+  /** Big front-paw swipe. */
+  swipe() {
+    this.swipeTime = 1
+  }
+
   /** A happy little head bob, used for roars. */
   cheer() {
     this.nod = 1
@@ -121,6 +127,16 @@ export class BearModel {
       else target = Math.sin(this.walkPhase + (i === 0 || i === 3 ? 0 : Math.PI)) * 0.7 * stride
       leg.rotation.x = damp(leg.rotation.x, target, 18, dt)
     })
+
+    // Swipe: the front-right paw shoots up and forward, then settles back.
+    if (this.swipeTime > 0) {
+      this.swipeTime = Math.max(0, this.swipeTime - dt * 3.5)
+      const t = Math.sin((1 - this.swipeTime) * Math.PI)
+      this.legs[1]!.rotation.x = -2.6 * t
+      this.legs[1]!.rotation.z = 0.5 * t
+    } else {
+      this.legs[1]!.rotation.z = 0
+    }
 
     const bob = grounded && !carried ? Math.abs(Math.sin(this.walkPhase)) * 0.08 * stride : 0
     this.squash = damp(this.squash, 0, 8, dt)

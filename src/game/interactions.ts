@@ -2,34 +2,45 @@ import * as THREE from "three"
 import type { Button, PadState } from "../services/Input.ts"
 import type { Bear, BearId } from "./bear.ts"
 
+/** What a prompt shows right now. */
+export interface PromptView {
+  readonly buttons: ReadonlyArray<Button>
+  readonly label: string
+  /** Flash the prompt: "press it NOW!" */
+  readonly now?: boolean
+}
+
 /**
  * Something a bear can do when standing in the right place. Each one shows a big button prompt.
  *
  * - `press`: tap the button once
  * - `mash`: tap the button `count` times
- * - `together`: hold every button in `buttons` at the same time for `holdTime` seconds
+ * - `guide`: coaching only. Shows whatever `view` returns and never eats button presses; the
+ *   actual success is decided by the game world (e.g. a swipe that physically reaches a target).
  */
 export interface Interaction {
   readonly id: string
   readonly who: BearId
-  readonly kind: "press" | "mash" | "together"
+  readonly kind: "press" | "mash" | "guide"
   readonly buttons: ReadonlyArray<Button>
   readonly label: string
   readonly count?: number
-  readonly holdTime?: number
   /** World position the prompt floats above. */
   readonly anchor: () => THREE.Vector3
-  /** Is the bear close enough? Defaults to a distance check against `anchor`. */
+  /** Is the bear close enough? */
   readonly inRange: (bear: Bear) => boolean
   readonly enabled: () => boolean
+  /** For `guide` prompts: what to show this frame, or null to hide. */
+  readonly view?: (bear: Bear) => PromptView | null
   readonly onStep?: (progress: number) => void
-  readonly onComplete: (bear: Bear) => void
+  readonly onComplete?: (bear: Bear) => void
 }
 
 export interface ActivePrompt {
   readonly interaction: Interaction
   readonly bear: Bear
   readonly progress: number
+  readonly view: PromptView
 }
 
 export class Interactions {
@@ -57,29 +68,19 @@ export class Interactions {
     const nearest = candidates.reduce((a, b) =>
       a.anchor().distanceToSquared(bear.position) <= b.anchor().distanceToSquared(bear.position) ? a : b
     )
-    let progress = this.progress.get(nearest.id) ?? 0
 
+    if (nearest.kind === "guide") {
+      const view = nearest.view?.(bear)
+      if (view) this.active.push({ interaction: nearest, bear, progress: 0, view })
+      return
+    }
+
+    let progress = this.progress.get(nearest.id) ?? 0
     if (pad) {
-      switch (nearest.kind) {
-        case "press": {
-          if (nearest.buttons.some((b) => pad.pressed[b])) progress = 1
-          break
-        }
-        case "mash": {
-          if (pad.pressed[nearest.buttons[0]!]) {
-            progress = Math.min(1, progress + 1 / (nearest.count ?? 3))
-            nearest.onStep?.(progress)
-          }
-          break
-        }
-        case "together": {
-          const allHeld = nearest.buttons.every((b) => pad.held[b])
-          progress = allHeld
-            ? Math.min(1, progress + dt / (nearest.holdTime ?? 1))
-            : Math.max(0, progress - dt * 0.35)
-          if (allHeld) nearest.onStep?.(progress)
-          break
-        }
+      if (nearest.kind === "press" && nearest.buttons.some((b) => pad.pressed[b])) progress = 1
+      if (nearest.kind === "mash" && pad.pressed[nearest.buttons[0]!]) {
+        progress = Math.min(1, progress + 1 / (nearest.count ?? 3))
+        nearest.onStep?.(progress)
       }
       for (const button of nearest.buttons) {
         pad.pressed[button] = false
@@ -88,11 +89,11 @@ export class Interactions {
 
     if (progress >= 1) {
       this.progress.set(nearest.id, 0)
-      nearest.onComplete(bear)
+      nearest.onComplete?.(bear)
       return
     }
     this.progress.set(nearest.id, progress)
-    this.active.push({ interaction: nearest, bear, progress })
+    this.active.push({ interaction: nearest, bear, progress, view: { buttons: nearest.buttons, label: nearest.label } })
   }
 
   /** Call at the start of each frame. */

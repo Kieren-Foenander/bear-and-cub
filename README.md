@@ -19,23 +19,28 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
 | Move | Left stick / d-pad | Left stick / d-pad |
 | Jump | A / ✕ | A / ✕ |
 | Action (pick up, lift, throw, push, roar) | B / ○ | B / ○ |
+| Swipe | X / □ | X / □ |
 | Free throw (while carrying Cub) | Y / △ | – |
-| Lever (hold together) | – | X + Y / □ + △ |
 
 - **Two controllers:** controller 1 is Mama, controller 2 is Cub.
 - **One controller / keyboard:** press **Back / Select** (or **Tab**) to switch bears.
-- **Keyboard:** WASD move · Space jump · E action · Q = X · R = Y · Tab switch.
+- **Keyboard:** WASD move · Space jump · E action · Q swipe · R throw · Tab switch.
 
 ### The adventure so far
 
+0. **The apple tree (practice):** Cub jumps and swipes an apple **at the top of her jump**.
+   The prompt goes `Jump!` → `Get ready…` → a flashing `NOW!`. Apples grow back, so she can
+   keep trying, and Mama can show her how.
 1. **The tall rock:** Mama picks Cub up and lifts her onto the ledge (stand on the glowing paw
    circle). Cub pushes the boulder (mash B) and it smashes the wooden barricade.
-2. **The river:** Mama throws Cub across from the paw circle. Cub holds X + Y together to pull
-   the lever, which lowers the bridge.
+2. **The river:** Mama throws Cub across from the paw circle. Cub jumps and rings the bell
+   (same jump-then-swipe timing, a bit stricter), which lowers the bridge.
 3. **The honey tree:** get both bears there for a celebration.
 
 Off the path: walk through flowers (they play notes), and hunt for butterflies hiding in the
 tall grass. Falling in the river is just a splash and a reset.
+
+The plan for teaching new skills over later levels is in [docs/skills.md](docs/skills.md).
 
 ## How it's built
 
@@ -58,7 +63,9 @@ src/
     bear.ts            bear movement (Rapier character controller), carry/launch
     bearModel.ts       the low-poly bear and its animations
     coop.ts            Mama's pick up / lift / throw / put down
-    interactions.ts    "stand here and press this" system (press, mash, hold-together)
+    interactions.ts    "stand here and press this" prompts (press, mash, coaching guides)
+    swipe.ts           swipe reach + timing coach (jump, then swipe at the top)
+    swipeThings.ts     the bell and the practice apple tree
     level.ts           cliffs, boulder + barricade, lever + bridge, honey tree, scenery
     terrain.ts         heightmap ground, river, water
     nature.ts          trees, rocks, grass, flowers, butterflies

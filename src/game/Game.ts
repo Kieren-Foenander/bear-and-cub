@@ -6,6 +6,7 @@ import { Physics } from "../services/Physics.ts"
 import { Renderer } from "../services/Renderer.ts"
 import { Sound } from "../services/Sound.ts"
 import { Bear, type BearSpec } from "./bear.ts"
+import { CUB, MAMA } from "./specs.ts"
 import { CoopCamera } from "./camera.ts"
 import { ControlRouter } from "./controls.ts"
 import { Coop } from "./coop.ts"
@@ -15,34 +16,9 @@ import { Level, SPOTS } from "./level.ts"
 import { Butterflies, Flowers, Grass, GRASS_PATCHES } from "./nature.ts"
 import { Particles } from "./particles.ts"
 import { Prompts } from "./prompts.ts"
+import { Swipes } from "./swipe.ts"
 import { createTerrain, Water } from "./terrain.ts"
 import { flat, mesh } from "./util.ts"
-
-const MAMA: BearSpec = {
-  id: "mama",
-  name: "Mama Bear",
-  look: { fur: "#8b5a3c", belly: "#d9a877" },
-  scale: 1,
-  radius: 0.7,
-  halfHeight: 0.25,
-  speed: 6.5,
-  jumpSpeed: 7.5,
-  ringColor: "#5aa9ff",
-  mass: 4
-}
-
-const CUB: BearSpec = {
-  id: "cub",
-  name: "Cub",
-  look: { fur: "#c98b55", belly: "#f1d2a6", scarf: "#ff6fa8" },
-  scale: 0.55,
-  radius: 0.4,
-  halfHeight: 0.13,
-  speed: 6,
-  jumpSpeed: 8.5,
-  ringColor: "#ff6fa8",
-  mass: 1
-}
 
 const spawnPoint = (spot: THREE.Vector3, spec: BearSpec) =>
   spot.clone().add(new THREE.Vector3(0, spec.halfHeight + spec.radius + 0.3, 0))
@@ -56,6 +32,7 @@ class Game {
   private readonly coopCamera: CoopCamera
   readonly router = new ControlRouter()
   private readonly interactions = new Interactions()
+  private readonly swipes = new Swipes(this.interactions)
   private readonly particles: Particles
   private readonly water: Water
   private readonly grass: Grass
@@ -129,6 +106,7 @@ class Game {
       scene,
       particles: this.particles,
       interactions: this.interactions,
+      swipes: this.swipes,
       sound: play,
       toast: (text) => this.hud.toast(text),
       shake: (amount) => this.coopCamera.shake(amount)
@@ -225,10 +203,20 @@ class Game {
       }
     }
 
+    // X is a paw swipe. Hanging things can only be reached near the top of a jump.
+    for (const [bear, pad] of [[mama, routed.mama], [cub, routed.cub]] as const) {
+      if (pad?.pressed.x && bear.mode === "walk") {
+        bear.model.swipe()
+        this.sound.play("swipe")
+        this.swipes.swipe(bear)
+      }
+    }
+
     mama.update(dt, routed.mama)
     this.coop.update(dt, routed.mama)
     cub.update(dt, routed.cub)
     this.level.update(dt, mama, cub)
+    this.swipes.update(dt, [mama, cub])
 
     this.world.timestep = dt
     this.world.step()

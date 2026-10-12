@@ -2,9 +2,11 @@ import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
 import type { SoundName } from "../services/Sound.ts"
 import type { Bear } from "./bear.ts"
-import { type Interactions, near } from "./interactions.ts"
+import type { Interactions } from "./interactions.ts"
 import { createRock, createTree, GRASS_PATCHES } from "./nature.ts"
 import type { Particles } from "./particles.ts"
+import type { Swipes } from "./swipe.ts"
+import { AppleTree, Bell } from "./swipeThings.ts"
 import { distanceToRiver, heightAt, pathX, RIVER_HALF_WIDTH, riverZ } from "./terrain.ts"
 import { clamp, damp, flat, jitter, mesh, seeded } from "./util.ts"
 
@@ -14,6 +16,7 @@ export interface LevelContext {
   readonly scene: THREE.Scene
   readonly particles: Particles
   readonly interactions: Interactions
+  readonly swipes: Swipes
   readonly sound: (name: SoundName) => void
   readonly toast: (text: string) => void
   readonly shake: (amount: number) => void
@@ -27,10 +30,11 @@ export const SPOTS = {
   liftTarget: new THREE.Vector3(6.8, 3.2, -6.2),
   throw: new THREE.Vector3(0, 0, -11.5),
   throwTarget: new THREE.Vector3(0.5, 0, -30.5),
-  lever: new THREE.Vector3(5, 0, -32),
+  appleTree: new THREE.Vector3(-6, 0, 15),
+  bell: new THREE.Vector3(5, 0, -32),
   honey: new THREE.Vector3(0, 0, -52)
 }
-for (const spot of [SPOTS.mamaSpawn, SPOTS.cubSpawn, SPOTS.lift, SPOTS.throw, SPOTS.throwTarget, SPOTS.lever, SPOTS.honey]) {
+for (const spot of [SPOTS.mamaSpawn, SPOTS.cubSpawn, SPOTS.lift, SPOTS.throw, SPOTS.throwTarget, SPOTS.appleTree, SPOTS.bell, SPOTS.honey]) {
   spot.y = heightAt(spot.x, spot.z)
 }
 
@@ -100,8 +104,8 @@ export class Level {
   private readonly boulderStart: THREE.Vector3
   private readonly barricade: THREE.Group
   private barricadeCollider: RAPIER.Collider | null
-  private readonly lever: THREE.Group
-  private leverPull = 0
+  private readonly bell: Bell
+  readonly appleTree: AppleTree
   private readonly bridge: THREE.Group
   private bridgeAngle = -Math.PI / 2
   private readonly liftMarker: SpotMarker
@@ -169,34 +173,14 @@ export class Level {
       }
     })
 
-    // --- Puzzle 2: throw the cub over the river so she can pull the lever and lower the bridge. ---
-    this.lever = this.buildLever()
-    this.bridge = this.buildBridge()
+    // --- Practice: an apple tree near the start teaches "jump, then swipe at the top". ---
+    this.appleTree = new AppleTree(ctx, SPOTS.appleTree)
 
-    ctx.interactions.add({
-      id: "pull-lever",
-      who: "cub",
-      kind: "together",
-      buttons: ["x", "y"],
-      holdTime: 1.4,
-      label: "Hold both!",
-      anchor: () => SPOTS.lever.clone().add(new THREE.Vector3(0, 2.6, 0)),
-      inRange: near(() => SPOTS.lever.clone().add(new THREE.Vector3(0, 0.6, 0)), 2.6),
-      enabled: () => !this.bridgeDown,
-      onStep: (progress) => {
-        this.leverPull = progress
-      },
-      onComplete: () => {
-        this.bridgeDown = true
-        this.leverPull = 1
-        ctx.sound("lever")
-        ctx.toast("The bridge is coming down!")
-        ctx.particles.burst(SPOTS.lever.clone().add(new THREE.Vector3(0, 1.5, 0)), {
-          colors: ["#ffe066", "#ffffff", "#8fe388"],
-          count: 30,
-          speed: 5
-        })
-      }
+    // --- Puzzle 2: throw the cub over the river so she can jump and ring the bell, lowering the bridge. ---
+    this.bridge = this.buildBridge()
+    this.bell = new Bell(ctx, SPOTS.bell, () => {
+      this.bridgeDown = true
+      ctx.toast("Ding! The bridge is coming down!")
     })
 
     // --- The goal: a honey tree. ---
@@ -258,24 +242,6 @@ export class Level {
     // A tall back wall on the ledge so the cub can't wander off the far side.
     block(WALL.gapHalf - 0.01, WALL.ledgeX[1], WALL.top, WALL.z - WALL.hz - 0.6, WALL.z - WALL.hz + 0.6)
     block(WALL.ledgeX[1], 46, WALL.top)
-  }
-
-  private buildLever() {
-    const { scene, rapier, world } = this.ctx
-    const base = mesh(new THREE.CylinderGeometry(0.8, 0.95, 0.8, 8), flat("#8a5a36"))
-    base.position.copy(SPOTS.lever).add(new THREE.Vector3(0, 0.4, 0))
-    scene.add(base)
-    world.createCollider(rapier.ColliderDesc.cylinder(0.4, 0.85).setTranslation(SPOTS.lever.x, SPOTS.lever.y + 0.4, SPOTS.lever.z))
-    const pivot = new THREE.Group()
-    pivot.position.copy(SPOTS.lever).add(new THREE.Vector3(0, 0.8, 0))
-    const stick = mesh(new THREE.CylinderGeometry(0.1, 0.12, 1.6, 6), flat("#c9a46a"))
-    stick.position.y = 0.8
-    const knob = mesh(new THREE.IcosahedronGeometry(0.28, 1), flat("#e5484d"))
-    knob.position.y = 1.65
-    pivot.add(stick, knob)
-    pivot.rotation.x = 0.6
-    scene.add(pivot)
-    return pivot
   }
 
   private buildBridge() {
@@ -448,9 +414,8 @@ export class Level {
       }
     }
 
-    // Lever follows how long the cub has been holding the buttons; the bridge swings down once it's pulled.
-    this.lever.rotation.x = damp(this.lever.rotation.x, 0.6 - this.leverPull * 1.2, 12, dt)
-    if (!this.bridgeDown) this.leverPull = damp(this.leverPull, 0, 1.5, dt)
+    this.appleTree.update(dt)
+    this.bell.update(dt)
     if (this.bridgeDown && this.bridgeAngle < 0) {
       this.bridgeAngle = Math.min(0, this.bridgeAngle + dt * 0.9)
       // Ease in with a little bounce at the end.
@@ -496,11 +461,14 @@ export class Level {
   /** What should the players do next? Drives the objective banner and the floating arrow. */
   objective(cub: Bear): { text: string; target: THREE.Vector3 | null } {
     if (!this.barricadeBroken) {
+      if (this.appleTree.cubHits === 0 && cub.feetY < WALL.ledgeTop - 0.6) {
+        return { text: "Cub: jump and swipe an apple!", target: SPOTS.appleTree.clone().add(new THREE.Vector3(0, 6, 0)) }
+      }
       if (cub.feetY > WALL.ledgeTop - 0.6) return { text: "Cub: push the big rock!", target: this.boulder.position.clone().add(new THREE.Vector3(0, 2.6, 0)) }
       return { text: "Mama: lift Cub up onto the rock!", target: SPOTS.lift.clone().add(new THREE.Vector3(0, 3.5, 0)) }
     }
     if (!this.bridgeDown) {
-      if (Level.acrossRiver(cub)) return { text: "Cub: pull the lever!", target: SPOTS.lever.clone().add(new THREE.Vector3(0, 4.5, 0)) }
+      if (Level.acrossRiver(cub)) return { text: "Cub: jump and ring the bell!", target: SPOTS.bell.clone().add(new THREE.Vector3(0, 5, 0)) }
       return { text: "Mama: throw Cub over the river!", target: SPOTS.throw.clone().add(new THREE.Vector3(0, 3.5, 0)) }
     }
     if (!this.finished) return { text: "Find the honey tree!", target: SPOTS.honey.clone().add(new THREE.Vector3(0.8, 4, 0)) }

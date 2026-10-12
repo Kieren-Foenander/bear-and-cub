@@ -20,6 +20,8 @@ export interface BearSpec {
   readonly jumpSpeed: number
   readonly ringColor: THREE.ColorRepresentation
   readonly mass: number
+  /** Extra hang time at the top of a jump: makes "swipe at the top" much easier to time. */
+  readonly apexFloat?: boolean
 }
 
 export interface BearContext {
@@ -169,7 +171,9 @@ export class Bear {
       this.ctx.sound(this.spec.id === "mama" ? "bigJump" : "jump")
     }
 
-    this.velocity.y -= GRAVITY * dt
+    // Only for her own jumps; throws are aimed with normal gravity.
+    const atApex = this.spec.apexFloat && !flying && !this.grounded && Math.abs(this.velocity.y) < 2.5
+    this.velocity.y -= GRAVITY * (atApex ? 0.4 : 1) * dt
     const desired = { x: this.velocity.x * dt, y: this.velocity.y * dt, z: this.velocity.z * dt }
     this.kcc.computeColliderMovement(
       this.collider,

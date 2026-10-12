@@ -175,6 +175,22 @@ body {
   background: rgba(46, 117, 201, 0.85);
 }
 
+/* The "press it now!" moment: big, bright and impossible to miss. */
+.prompt.now .prompt-buttons {
+  animation: none;
+  transform: scale(1.35);
+}
+
+.prompt.now .btn {
+  box-shadow: 0 0 0 0.12em #fff, 0 0 0.6em 0.25em #ffe066;
+}
+
+.prompt.now .prompt-label {
+  background: #ffb800;
+  color: #3b2a1e;
+  transform: scale(1.2);
+}
+
 .prompt-bar {
   width: 140px;
   height: 16px;
