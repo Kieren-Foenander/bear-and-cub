@@ -3,6 +3,7 @@ import { preloadBearModels } from "./game/bearModel.ts"
 import { GameLive } from "./game/Game.ts"
 import { Hud } from "./services/Hud.ts"
 import { Input } from "./services/Input.ts"
+import { Music } from "./services/Music.ts"
 import { Physics } from "./services/Physics.ts"
 import { Renderer } from "./services/Renderer.ts"
 import { Save } from "./services/Save.ts"
@@ -10,7 +11,10 @@ import { Sound } from "./services/Sound.ts"
 import "./style.css"
 
 const MainLive = GameLive.pipe(
-  Layer.provide(Layer.mergeAll(Renderer.layer, Physics.layer, Input.layer, Sound.layer, Save.layer, Hud.layer))
+  Layer.provide(Layer.mergeAll(
+    Renderer.layer, Physics.layer, Input.layer,
+    Music.layer.pipe(Layer.provideMerge(Sound.layer)), Save.layer, Hud.layer
+  ))
 )
 
 const fiber = Effect.runFork(

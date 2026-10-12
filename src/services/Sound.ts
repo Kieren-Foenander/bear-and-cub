@@ -27,6 +27,8 @@ export type SoundName =
   | "swap"
 
 export class Sound extends Context.Service<Sound, {
+  /** Shared clock for music; Sound owns unlocking and closing this context. */
+  readonly context: AudioContext
   readonly play: (name: SoundName) => void
   /** Plays the nth note of a pentatonic scale, used for flowers. */
   readonly note: (index: number) => void
@@ -42,7 +44,11 @@ export class Sound extends Context.Service<Sound, {
         (ctx) => Effect.promise(() => ctx.close())
       )
       // Any click or key press counts as permission to play audio.
-      const resume = () => void ctx.resume()
+      let unlocked = false
+      const resume = () => {
+        unlocked = true
+        void ctx.resume()
+      }
       yield* Effect.acquireRelease(
         Effect.sync(() => {
           window.addEventListener("pointerdown", resume)
@@ -170,10 +176,11 @@ export class Sound extends Context.Service<Sound, {
       }
 
       return Sound.of({
+        context: ctx,
         play,
         note,
-        unlock: () => void ctx.resume(),
-        isLocked: () => ctx.state !== "running"
+        unlock: resume,
+        isLocked: () => !unlocked || ctx.state !== "running"
       })
     })
   )
