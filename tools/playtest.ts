@@ -70,6 +70,19 @@ const walkTo = (bear, x, z, maxFrames = 900, tol = 0.4) => {
   }
   return -1
 }
+const hopTo = (bear, x, z, frames = 120) => {
+  for (let i = 0; i < frames; i++) {
+    const dx = x - bear.position.x, dz = z - bear.position.z, d = Math.hypot(dx, dz)
+    const codes = []
+    if (d > 0.3) { if (dx > 0.3 * d) codes.push('KeyD'); if (dx < -0.3 * d) codes.push('KeyA'); if (dz > 0.3 * d) codes.push('KeyS'); if (dz < -0.3 * d) codes.push('KeyW') }
+    if (i === 0) codes.push('Space')
+    run(1, codes)
+    if (i > 8 && bear.grounded && d < 0.5) break
+  }
+  run(5, [])
+  return r(bear.position)
+}
+const V = (x, y, z) => S.stage.mama.position.clone().set(x, y, z)
 const jumpSwipe = () => { run(2, ['Space']); for (let i = 0; i < 80; i++) { if (prompts().some(p => p.includes('[NOW]'))) { run(2, ['KeyQ']); run(3, []); return i } run(1) } run(1, []); return -1 }
 `
 try {

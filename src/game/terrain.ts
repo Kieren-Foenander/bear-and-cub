@@ -19,6 +19,9 @@ export interface TerrainDef {
   readonly waterY?: number
   readonly waterColor?: THREE.ColorRepresentation
   readonly grass?: ReadonlyArray<THREE.ColorRepresentation>
+  /** Colour for slopes too steep to climb. */
+  readonly rock?: THREE.ColorRepresentation
+  /** Colour for steep-ish grassy slopes. */
   readonly hill?: THREE.ColorRepresentation
   /** Triangle size in metres. Smaller = crisper edges (e.g. creek banks you jump across). */
   readonly cell?: number
@@ -85,6 +88,10 @@ export class Terrain {
     const hill = new THREE.Color(def.hill ?? "#5b9e3c")
     const sand = new THREE.Color("#e3d2a0")
     const bed = new THREE.Color("#8d8a7a")
+    const rock = new THREE.Color(def.rock ?? "#a89d8d")
+    const a = new THREE.Vector3()
+    const b = new THREE.Vector3()
+    const c = new THREE.Vector3()
     for (let i = 0; i < fp.count; i += 3) {
       const cx = (fp.getX(i) + fp.getX(i + 1) + fp.getX(i + 2)) / 3
       const cy = (fp.getY(i) + fp.getY(i + 1) + fp.getY(i + 2)) / 3
@@ -93,8 +100,16 @@ export class Terrain {
       if (custom != null) color.set(custom)
       else if (cy < this.waterY - 0.3) color.copy(bed)
       else if (cy < this.waterY + 0.9) color.copy(sand)
-      else if (cy > 3.5) color.copy(hill).offsetHSL(0, 0, hash3(cx, cy, cz) * 0.03)
-      else color.copy(grass[Math.floor((hash3(cx, 7, cz) * 0.5 + 0.5) * grass.length) % grass.length]!)
+      else {
+        // Colour by slope: cliffs are rock, steep banks a darker green, flat ground grass.
+        a.fromBufferAttribute(fp, i)
+        b.fromBufferAttribute(fp, i + 1).sub(a)
+        c.fromBufferAttribute(fp, i + 2).sub(a)
+        const steepness = Math.abs(b.cross(c).normalize().y)
+        if (steepness < 0.6) color.copy(rock).offsetHSL(0, 0, hash3(cx, cy, cz) * 0.04)
+        else if (steepness < 0.85) color.copy(hill).offsetHSL(0, 0, hash3(cx, cy, cz) * 0.03)
+        else color.copy(grass[Math.floor((hash3(cx, 7, cz) * 0.5 + 0.5) * grass.length) % grass.length]!)
+      }
       for (let k = 0; k < 3; k++) color.toArray(colors, (i + k) * 3)
     }
     faceted.setAttribute("color", new THREE.BufferAttribute(colors, 3))

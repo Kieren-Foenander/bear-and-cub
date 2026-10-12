@@ -236,7 +236,7 @@ export class HangingPinecone {
     at: THREE.Vector3,
     onDrop: () => void,
     lift = 1.6,
-    style: "pinecone" | "bellflower" = "pinecone"
+    style: "pinecone" | "bellflower" | "beehive" = "pinecone"
   ) {
     const { scene, rapier, world, swipes } = ctx
     const ground = at.y
@@ -259,7 +259,21 @@ export class HangingPinecone {
     scene.add(this.rope)
 
     this.cone = new THREE.Group()
-    if (style === "bellflower") {
+    if (style === "beehive") {
+      // A big golden honeycomb, dripping.
+      this.material.color.set("#f2b632")
+      this.material.emissive.set("#ffcf3f")
+      for (let i = 0; i < 5; i++) {
+        const ring = mesh(new THREE.TorusGeometry(0.5 - Math.abs(i - 2) * 0.1, 0.2, 6, 10), i % 2 ? this.material : flat("#e09b1d"))
+        ring.rotation.x = Math.PI / 2
+        ring.position.y = 0.3 - i * 0.25
+        this.cone.add(ring)
+      }
+      const drip = mesh(new THREE.IcosahedronGeometry(0.12, 0), flat("#ffc21a"))
+      drip.position.set(0.2, -0.95, 0.1)
+      drip.scale.y = 1.6
+      this.cone.add(drip)
+    } else if (style === "bellflower") {
       // A glowing blue bell flower: petals flare out at the bottom.
       this.material.color.set("#6f8dff")
       this.material.emissive.set("#9fb6ff")
