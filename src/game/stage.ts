@@ -58,6 +58,8 @@ export class Stage {
   private butterflies: Butterflies | null = null
   private goal: Goal | null = null
   private time = 0
+  private readonly lastRoar = { mama: -99, cub: -99 }
+  private lastHug = -99
   /** Seconds since both bears reached the honey pot; -1 until then. */
   completeTime = -1
 
@@ -223,10 +225,22 @@ export class Stage {
       this.interactions.update(dt, cub, cubPad)
 
       // B with nothing to do is a roar. Everyone loves a roar.
+      // Roar together, standing close, and it's a bear hug.
       for (const [bear, pad] of [[mama, mamaPad], [cub, cubPad]] as const) {
         if (pad?.pressed.b && bear.mode === "walk" && !(bear === mama && this.coop.carrying)) {
           bear.model.cheer()
           sound.play(bear === mama ? "roar" : "cubRoar")
+          this.lastRoar[bear.spec.id] = this.time
+          const other = bear === mama ? cub : mama
+          if (this.time - this.lastRoar[other.spec.id] < 0.8 && bear.position.distanceTo(other.position) < 4 && this.time - this.lastHug > 2) {
+            this.lastHug = this.time
+            const between = mama.position.clone().add(cub.position).multiplyScalar(0.5).add(new THREE.Vector3(0, 1.5, 0))
+            this.particles.burst(between, { colors: ["#ff6fa8", "#ff3d7f", "#ffb3d1"], count: 36, speed: 3, up: 3, gravity: 0.05, life: 2, size: 0.15 })
+            sound.play("found")
+            this.services.toast("Bear hug! ❤️")
+            mama.model.celebrate()
+            cub.model.celebrate()
+          }
         }
       }
       // X is a paw swipe. Hanging things can only be reached near the top of a jump.
