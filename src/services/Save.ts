@@ -13,7 +13,9 @@ const Progress = Schema.Struct({
   version: Schema.Literal(1),
   levels: Schema.Record(Schema.String, LevelResult),
   /** What the little one wants Cub to be called. */
-  cubName: Schema.optional(Schema.String)
+  cubName: Schema.optional(Schema.String),
+  /** Which hat Cub is wearing. */
+  hat: Schema.optional(Schema.String)
 })
 export type Progress = typeof Progress.Type
 

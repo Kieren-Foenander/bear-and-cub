@@ -90,6 +90,21 @@ export class BearModel {
   celebrate(): void { this.celebrateTime = 0; this.idleTime = 0 }
   shake(): void { this.shakeTime = 0; this.idleTime = 0 }
 
+  private hat: THREE.Object3D | null = null
+
+  /** Pop a hat on (or take it off with null). The hat is built at head scale and sits on top of the head. */
+  wear(hat: THREE.Object3D | null): void {
+    if (this.hat) this.rig.head.remove(this.hat)
+    this.hat = hat
+    if (!hat) return
+    hat.position.set(0, this.rig.cub ? 0.44 : 0.4, -0.04)
+    hat.rotation.x = -0.15
+    hat.traverse((object) => {
+      if (object instanceof THREE.Mesh) object.castShadow = true
+    })
+    this.rig.head.add(hat)
+  }
+
   animate(dt: number, state: BearAnimState): void {
     // Ignore invalid time and bound suspended-tab catch-up, so poses stay finite.
     if (!Number.isFinite(dt) || dt <= 0) return

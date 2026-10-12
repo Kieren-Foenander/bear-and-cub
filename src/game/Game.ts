@@ -6,6 +6,7 @@ import { Renderer } from "../services/Renderer.ts"
 import { type Progress, recordResult, Save } from "../services/Save.ts"
 import { Sound } from "../services/Sound.ts"
 import { ControlRouter, type Routed } from "./controls.ts"
+import { type Hat, HATS, hatById } from "./hats.ts"
 import { GameHud } from "./hud.ts"
 import { LEVELS } from "./levels/index.ts"
 import { type LevelStats, MenuNav, Menus } from "./menus.ts"
@@ -35,6 +36,7 @@ class Session {
   private pauseSelected = 0
   private progress: Progress
   private lastStats: LevelStats | null = null
+  private newHat: Hat | undefined
   private readonly unlockAll = new URLSearchParams(location.search).has("unlock")
 
   constructor(
@@ -64,6 +66,23 @@ class Session {
   }
 
   private makeStage(index: number) {
+    const stage = this.buildStage(index)
+    stage.cub.model.wear(hatById(this.progress.hat)?.build() ?? null)
+    return stage
+  }
+
+  /** Hats Cub has earned so far (one per finished level). */
+  private unlockedHats() {
+    return HATS.filter((hat) => this.progress.levels[hat.unlockedBy]?.done)
+  }
+
+  private setHat(hat: Hat | undefined) {
+    this.progress = { ...this.progress, hat: hat?.id }
+    this.save.save(this.progress)
+    this.stage.cub.model.wear(hat?.build() ?? null)
+  }
+
+  private buildStage(index: number) {
     return new Stage(LEVELS[index]!, {
       rapier: this.physics.RAPIER,
       camera: this.renderer.camera,
@@ -196,6 +215,7 @@ class Session {
 
   private finishLevel() {
     const level = LEVELS[this.levelIndex]!
+    const firstTime = !this.progress.levels[level.id]?.done
     const stats: LevelStats = {
       berries: this.stage.berries.collected,
       berriesTotal: this.stage.berries.total,
@@ -204,6 +224,9 @@ class Session {
     }
     this.progress = recordResult(this.progress, level.id, { done: true, ...stats })
     this.save.save(this.progress)
+    // A brand new hat for finishing a level for the first time. Pop it straight on!
+    this.newHat = firstTime ? HATS.find((hat) => hat.unlockedBy === level.id) : undefined
+    if (this.newHat) this.setHat(this.newHat)
     this.lastStats = stats
     this.screen = "complete"
   }
@@ -227,7 +250,18 @@ class Session {
         if (nav.left) this.mapSelected = Math.max(0, this.mapSelected - 1)
         if (nav.right) this.mapSelected = Math.min(LEVELS.length - 1, this.mapSelected + 1)
         if (nav.left || nav.right) this.sound.play("pop")
-        this.menus.showMap(LEVELS, this.progress, this.unlocked, this.mapSelected, style)
+        // Up / down tries on hats.
+        const hats = this.unlockedHats()
+        if ((nav.up || nav.down) && hats.length > 0) {
+          const choices = [undefined, ...hats]
+          const current = choices.findIndex((hat) => hat?.id === this.progress.hat)
+          const next = choices[(current + (nav.down ? 1 : choices.length - 1)) % choices.length]
+          this.setHat(next)
+          this.sound.play("pickup")
+        }
+        const wearing = hatById(this.progress.hat)
+        const hatLine = hats.length === 0 ? "" : `▲ ▼ hats: ${wearing ? `${wearing.emoji} ${wearing.name}` : "no hat"}`
+        this.menus.showMap(LEVELS, this.progress, this.unlocked, this.mapSelected, style, hatLine)
         if (nav.confirm) {
           if (this.unlocked(this.mapSelected)) {
             this.sound.play("pickup")
@@ -263,7 +297,7 @@ class Session {
       }
       case "complete": {
         const last = LEVELS[this.levelIndex]!.finale === true
-        this.menus.showComplete(LEVELS[this.levelIndex]!, this.lastStats!, last, style)
+        this.menus.showComplete(LEVELS[this.levelIndex]!, this.lastStats!, last, style, this.newHat, this.cubName)
         if (nav.confirm) {
           this.sound.play("pickup")
           if (last) {

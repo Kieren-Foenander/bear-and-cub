@@ -1,5 +1,6 @@
 import { type ButtonStyle, type Device, mergePads } from "../services/Input.ts"
 import type { Progress } from "../services/Save.ts"
+import type { Hat } from "./hats.ts"
 import type { LevelDef } from "./levels/types.ts"
 import { buttonHtml } from "./prompts.ts"
 
@@ -98,7 +99,14 @@ export class Menus {
     )
   }
 
-  showMap(levels: ReadonlyArray<LevelDef>, progress: Progress, unlocked: (index: number) => boolean, selected: number, style: ButtonStyle) {
+  showMap(
+    levels: ReadonlyArray<LevelDef>,
+    progress: Progress,
+    unlocked: (index: number) => boolean,
+    selected: number,
+    style: ButtonStyle,
+    hatLine: string
+  ) {
     const cards = levels
       .map((level, i) => {
         const result = progress.levels[level.id]
@@ -120,6 +128,7 @@ export class Menus {
       this.map,
       `<div class="map-title">Where shall we go?</div>
        <div class="cards">${cards}</div>
+       ${hatLine ? `<div class="hat-line">${hatLine}</div>` : ""}
        <div class="menu-hint">${unlocked(selected) ? `◀ ▶ choose &nbsp; ${buttonHtml("a", style)} let's go!` : "🔒 Finish the one before to open this one!"}</div>`
     )
   }
@@ -133,7 +142,7 @@ export class Menus {
     )
   }
 
-  showComplete(level: LevelDef, stats: LevelStats, last: boolean, style: ButtonStyle) {
+  showComplete(level: LevelDef, stats: LevelStats, last: boolean, style: ButtonStyle, newHat: Hat | undefined, cubName: string) {
     const berryStars = stats.berriesTotal > 0 && stats.berries === stats.berriesTotal ? " ⭐" : ""
     const butterflyStars = stats.butterfliesTotal > 0 && stats.butterflies === stats.butterfliesTotal ? " ⭐" : ""
     this.show(
@@ -145,6 +154,7 @@ export class Menus {
          <div>🍓 ${stats.berries} / ${stats.berriesTotal}${berryStars}</div>
          <div>🦋 ${stats.butterflies} / ${stats.butterfliesTotal}${butterflyStars}</div>
        </div>
+       ${newHat ? `<div class="new-hat">New hat for ${cubName}! <span>${newHat.emoji}</span> ${newHat.name}</div>` : ""}
        <div class="menu-hint">${buttonHtml("a", style)} ${last ? "the end…" : "next adventure"}</div>`
     )
   }
