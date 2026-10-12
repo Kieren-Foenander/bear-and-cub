@@ -127,7 +127,7 @@ export const rideCoach = (
     label: "",
     anchor: () => anchor.set(lastX, y + 2.4, edgeZ),
     inRange: (bear) => {
-      const along = (bear.position.z - edgeZ) * -direction
+      const along = (bear.position.z - edgeZ) * direction
       const inside = along > -3 && along < 0.6 && bear.position.x > minX && bear.position.x < maxX && Math.abs(bear.feetY - y) < 1
       if (inside) lastX = bear.position.x
       return inside

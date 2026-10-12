@@ -218,12 +218,13 @@ export class Stage {
   update(dt: number, routed: Routed | null) {
     this.time += dt
     const { mama, cub } = this
+
+    // Once the level is won, nothing more to do: just celebrate.
+    if (this.completeTime >= 0) routed = null
     const mamaPad = routed?.mama ?? null
     const cubPad = routed?.cub ?? null
     const sound = this.services.sound
 
-    // Once the level is won, nothing more to do: just celebrate.
-    if (this.completeTime >= 0) routed = null
     if (routed) {
       mama.highlighted = !routed.twoPlayer && routed.active === "mama"
       cub.highlighted = !routed.twoPlayer && routed.active === "cub"

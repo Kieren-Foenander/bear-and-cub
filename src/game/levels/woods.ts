@@ -164,7 +164,7 @@ export const woods: LevelDef = {
       anchor: () => seesaw.endA.clone().add(new THREE.Vector3(0, 2, 0)),
       inRange: (bear) => bear.position.distanceTo(seesaw.endA) < 5 && bear.feetY < CLIFF.top - 1,
       enabled: () => true,
-      view: (bear) => (onEnd(bear, seesaw.endA) ? { buttons: [], label: "Hold on tight!" } : { buttons: ["move"], label: "Stand on pink!" })
+      view: (bear) => (onEnd(bear, seesaw.endA) ? { buttons: [], label: "Hold on tight!" } : { buttons: ["a"], label: "Jump onto pink!" })
     })
     interactions.add({
       id: "seesaw-mama",
@@ -294,7 +294,7 @@ export const woods: LevelDef = {
         if (!pastStream(cub) || !pastStream(mama)) return { text: "Ride the floating logs over the stream!", target: new THREE.Vector3(0, LOG_TOP + 3, lanes[0]!.z) }
         if (!onCliff(cub)) {
           if (onEnd(cub, seesaw.endA)) return { text: "Mama: jump on the blue end!", target: seesaw.endB.clone().add(new THREE.Vector3(0, 3, 0)) }
-          return { text: "Cub: stand on the pink end of the seesaw!", target: seesaw.endA.clone().add(new THREE.Vector3(0, 3, 0)) }
+          return { text: "Cub: jump onto the pink end of the seesaw!", target: seesaw.endA.clone().add(new THREE.Vector3(0, 3, 0)) }
         }
         if (!grown) return { text: "Cub: jump and swipe the magic flower!", target: new THREE.Vector3(-1, CLIFF.top + 4.5, CLIFF.front - 4) }
         if (!onCliff(mama)) return { text: "Mama: climb the mushroom steps!", target: new THREE.Vector3(9, 4, -14) }
