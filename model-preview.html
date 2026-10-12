@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bear & Cub · Character studio</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f8f3e8; color: #484239; font-family: ui-rounded, 'Trebuchet MS', sans-serif; }
+    header { position: absolute; left: 32px; top: 26px; z-index: 1; pointer-events: none; }
+    header span { text-transform: uppercase; letter-spacing: .18em; font-size: 11px; color: #778575; }
+    h1 { margin: 7px 0; font-size: 31px; letter-spacing: -.05em; }
+    header p { margin: 0; font-size: 13px; color: #79766d; }
+    #stage { width: 100%; height: calc(100vh - 192px); min-height: 360px; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #status { position: absolute; top: 30px; right: 32px; padding: 10px 15px; border-radius: 20px; background: #ffffffa8; font-size: 13px; }
+    footer { min-height: 192px; padding: 20px 32px; background: #fffaf3; border-top: 1px solid #e7e3d7; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    button { background: #f1eee4; border: 1px solid #e2ded2; border-radius: 12px; color: #555247; padding: 10px 15px; font: inherit; font-size: 13px; cursor: pointer; }
+    button:hover { background: #e5eadc; }
+    button.active { background: #697e62; color: #fffaf3; border-color: #697e62; }
+    button small { opacity: .6; margin-left: 6px; }
+    label { display: flex; gap: 12px; align-items: center; font-size: 13px; }
+    input { accent-color: #697e62; width: 180px; }
+    .sep { width: 1px; height: 22px; background: #dedbce; margin: 0 8px; }
+    #hint { font-size: 12px; color: #888578; }
+    @media (max-width: 700px) { header { left: 18px; top: 18px; } h1 { font-size: 24px; } header p { max-width: 220px; } #status { right: 16px; top: 88px; } footer { padding: 15px; } #stage { height: 60vh; } button { padding: 9px; } }
+  </style>
+</head>
+<body>
+  <header><span>A little adventure, together</span><h1>Bear & Cub</h1><p>Character studio · Mama's warmth, Cub's wonder.</p></header>
+  <div id="status" aria-live="polite">Idle · breathing & blinking</div>
+  <main id="stage" aria-label="Live three dimensional bear animation preview"></main>
+  <footer>
+    <div class="row" id="animations">
+      <button data-mode="idle" class="active">Idle <small>1</small></button>
+      <button data-mode="walk">Walk <small>2</small></button>
+      <button data-mode="run">Run <small>3</small></button>
+      <button data-mode="jump">Jump <small>4</small></button>
+      <button data-mode="swipe">Swipe <small>Q</small></button>
+      <button data-mode="cheer">Cheer <small>E</small></button>
+      <button data-mode="carried">Ride <small>5</small></button>
+      <button data-mode="flying">Wheee! <small>6</small></button>
+      <button data-mode="celebrate">Dance <small>C</small></button>
+      <button data-mode="shake">Shake <small>H</small></button>
+      <button data-mode="sit">Sit & yawn <small>7</small></button>
+    </div>
+    <div class="row">
+      <label for="speed">Speed <input id="speed" type="range" min="0" max="1" step="0.01" value="0" /><output id="speed-value">0%</output></label>
+      <div class="sep"></div>
+      <button data-view="portrait" class="active">Portrait</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="couch">Game distance</button>
+      <div class="sep"></div><button id="pause">Pause <small>P</small></button>
+    </div>
+    <div id="hint">Actual game scales: Mama 1× · Cub 0.55×. Idle settles into a sit after 8 seconds. Try Q during a jump.</div>
+  </footer>
+  <script type="module" src="/src/modelPreview.ts"></script>
+</body>
+</html>
