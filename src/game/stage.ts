@@ -1,6 +1,8 @@
 import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"
 import type { Sound, SoundName } from "../services/Sound.ts"
+import { batchStatic } from "./batching.ts"
 import { Bear, type BearSpec } from "./bear.ts"
 import { CoopCamera } from "./camera.ts"
 import { Berries } from "./collectibles.ts"
@@ -49,7 +51,7 @@ export class Stage {
   readonly logic: LevelLogic
   readonly cameraRig: CoopCamera
   private readonly sun: THREE.DirectionalLight
-  private readonly clouds: Array<THREE.Group> = []
+  private readonly clouds: Array<THREE.Mesh> = []
   private readonly arrow: THREE.Mesh
   private grass: Grass | null = null
   private flowers: Flowers | null = null
@@ -140,6 +142,7 @@ export class Stage {
       }
     }
     this.logic = def.build(api)
+    batchStatic(scene)
     this.cameraRig.update(0, [this.mama.position, this.cub.position], true)
   }
 
@@ -177,14 +180,18 @@ export class Stage {
 
   private buildClouds() {
     const { minX, maxX, minZ, maxZ } = this.terrain.bounds
+    const white = flat("#ffffff")
     for (let i = 0; i < 10; i++) {
-      const cloud = new THREE.Group()
-      const puffs = 3 + (i % 3)
-      for (let j = 0; j < puffs; j++) {
-        const puff = mesh(new THREE.IcosahedronGeometry(2 + Math.random() * 1.5, 0), flat("#ffffff"), { receiveShadow: false, castShadow: false })
-        puff.position.set(j * 2.4 - puffs, Math.random(), Math.random() * 1.5)
-        cloud.add(puff)
+      // Each cloud is a few puffs merged into one mesh.
+      const puffs: Array<THREE.BufferGeometry> = []
+      const count = 3 + (i % 3)
+      for (let j = 0; j < count; j++) {
+        puffs.push(
+          new THREE.IcosahedronGeometry(2 + Math.random() * 1.5, 0).translate(j * 2.4 - count, Math.random(), Math.random() * 1.5)
+        )
       }
+      const cloud = new THREE.Mesh(mergeGeometries(puffs)!, white)
+      for (const puff of puffs) puff.dispose()
       cloud.position.set(minX + Math.random() * (maxX - minX), 26 + Math.random() * 8, minZ + Math.random() * (maxZ - minZ))
       this.scene.add(cloud)
       this.clouds.push(cloud)

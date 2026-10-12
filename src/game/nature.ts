@@ -1,5 +1,7 @@
 import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"
+import { markStatic } from "./batching.ts"
 import type { Terrain } from "./terrain.ts"
 import { damp, flat, jitter, mesh, seeded } from "./util.ts"
 
@@ -50,7 +52,7 @@ export const createTree = (
       tree.add(blob)
     }
   }
-  scene.add(tree)
+  scene.add(markStatic(tree))
   world.createCollider(rapier.ColliderDesc.cylinder(2, 0.4 * scale).setTranslation(x, y + 1.6, z))
   return tree
 }
@@ -68,7 +70,7 @@ export const createRock = (
   const { scene, rapier, world } = env
   const y = env.terrain.heightAt(x, z)
   rock.position.set(x, y + size * 0.2, z)
-  scene.add(rock)
+  scene.add(markStatic(rock))
   if (size > 0.6) world.createCollider(rapier.ColliderDesc.ball(size * 0.7).setTranslation(x, y + size * 0.1, z))
 }
 
@@ -146,60 +148,98 @@ export class Grass {
 }
 
 interface Flower {
-  group: THREE.Group
+  readonly position: THREE.Vector3
   bounce: number
   cooldown: number
-  note: number
+  readonly note: number
 }
 
-/** Walk through flowers and they bounce and play a note. */
+/** Paint a whole geometry one colour (as a vertex colour) so differently coloured parts can share one mesh. */
+export const painted = (geometry: THREE.BufferGeometry, color: THREE.ColorRepresentation) => {
+  const g = geometry.index ? geometry.toNonIndexed() : geometry
+  const c = new THREE.Color(color)
+  const colors = new Float32Array(g.attributes.position!.count * 3)
+  for (let i = 0; i < colors.length; i += 3) c.toArray(colors, i)
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3))
+  for (const name of Object.keys(g.attributes)) if (name !== "position" && name !== "normal" && name !== "color") g.deleteAttribute(name)
+  return g
+}
+
+/**
+ * Walk through flowers and they bounce and play a note.
+ * All the stems are one instanced mesh and all the petals another, so a meadow full of
+ * flowers is just two draw calls.
+ */
 export class Flowers {
   private readonly flowers: Array<Flower> = []
+  private readonly stems: THREE.InstancedMesh
+  private readonly heads: THREE.InstancedMesh
+  private readonly matrix = new THREE.Matrix4()
+  private readonly quaternion = new THREE.Quaternion()
+  private readonly euler = new THREE.Euler()
+  private readonly scale = new THREE.Vector3()
 
   constructor(scene: THREE.Scene, terrain: Terrain, clusters: ReadonlyArray<readonly [number, number]>) {
     const rand = seeded(7)
     const petals = ["#ff7eb6", "#ffd84d", "#ffffff", "#b38cff", "#ff9a4d"]
-    const stem = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4)
-    const head = new THREE.IcosahedronGeometry(0.16, 0)
-    const middle = new THREE.IcosahedronGeometry(0.08, 0)
     let note = 0
+    const colors: Array<THREE.Color> = []
     for (const [cx, cz] of clusters) {
       const count = 5 + Math.floor(rand() * 4)
       for (let i = 0; i < count; i++) {
         const x = cx + (rand() - 0.5) * 3.5
         const z = cz + (rand() - 0.5) * 3.5
-        const group = new THREE.Group()
-        group.position.set(x, terrain.heightAt(x, z), z)
-        const s = mesh(stem, flat("#4c9a3e"), { castShadow: false })
-        s.position.y = 0.25
-        const h = mesh(head, flat(petals[Math.floor(rand() * petals.length)]!))
-        h.position.y = 0.55
-        h.scale.y = 0.5
-        const m = mesh(middle, flat("#ffcf3f"), { castShadow: false })
-        m.position.y = 0.62
-        group.add(s, h, m)
-        scene.add(group)
-        this.flowers.push({ group, bounce: 0, cooldown: 0, note: note++ })
+        this.flowers.push({ position: new THREE.Vector3(x, terrain.heightAt(x, z), z), bounce: 0, cooldown: 0, note: note++ })
+        colors.push(new THREE.Color(petals[Math.floor(rand() * petals.length)]!))
       }
     }
+    const stem = painted(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4).translate(0, 0.25, 0), "#4c9a3e")
+    const middle = painted(new THREE.IcosahedronGeometry(0.08, 0).translate(0, 0.62, 0), "#ffcf3f")
+    const stemGeometry = mergeGeometries([stem, middle])!
+    const headGeometry = new THREE.IcosahedronGeometry(0.16, 0).scale(1, 0.5, 1).translate(0, 0.55, 0)
+    const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 })
+    this.stems = new THREE.InstancedMesh(stemGeometry, material, this.flowers.length)
+    this.heads = new THREE.InstancedMesh(headGeometry, new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.9 }), this.flowers.length)
+    this.heads.castShadow = true
+    this.stems.receiveShadow = this.heads.receiveShadow = true
+    colors.forEach((color, i) => this.heads.setColorAt(i, color))
+    this.flowers.forEach((_, i) => this.place(i))
+    scene.add(this.stems, this.heads)
+  }
+
+  private place(i: number) {
+    const flower = this.flowers[i]!
+    const wobble = Math.sin(flower.bounce * 14) * flower.bounce
+    this.quaternion.setFromEuler(this.euler.set(0, 0, wobble * 0.5))
+    this.scale.setScalar(1 + flower.bounce * 0.5)
+    this.matrix.compose(flower.position, this.quaternion, this.scale)
+    this.stems.setMatrixAt(i, this.matrix)
+    this.heads.setMatrixAt(i, this.matrix)
   }
 
   update(dt: number, bears: ReadonlyArray<THREE.Vector3>, playNote: (index: number) => void) {
-    for (const flower of this.flowers) {
+    let changed = false
+    this.flowers.forEach((flower, i) => {
       flower.cooldown -= dt
       for (const bear of bears) {
-        const dx = bear.x - flower.group.position.x
-        const dz = bear.z - flower.group.position.z
-        if (dx * dx + dz * dz < 0.9 && flower.cooldown <= 0 && Math.abs(bear.y - flower.group.position.y) < 2) {
+        const dx = bear.x - flower.position.x
+        const dz = bear.z - flower.position.z
+        if (dx * dx + dz * dz < 0.9 && flower.cooldown <= 0 && Math.abs(bear.y - flower.position.y) < 2) {
           flower.bounce = 1
           flower.cooldown = 1.2
           playNote(flower.note)
         }
       }
-      flower.bounce = damp(flower.bounce, 0, 4, dt)
-      const wobble = Math.sin(flower.bounce * 14) * flower.bounce
-      flower.group.rotation.z = wobble * 0.5
-      flower.group.scale.setScalar(1 + flower.bounce * 0.5)
+      if (flower.bounce > 0.001) {
+        flower.bounce = damp(flower.bounce, 0, 4, dt)
+        if (flower.bounce < 0.002) flower.bounce = 0
+        this.place(i)
+        changed = true
+      }
+    })
+    if (changed) {
+      this.stems.instanceMatrix.needsUpdate = true
+      this.heads.instanceMatrix.needsUpdate = true
     }
   }
 }

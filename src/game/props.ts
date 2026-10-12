@@ -1,5 +1,6 @@
 import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
+import { markStatic } from "./batching.ts"
 import type { Env } from "./nature.ts"
 import { flat, jitter, mesh } from "./util.ts"
 
@@ -29,7 +30,7 @@ export const cliff = (
   )
   const rock = mesh(geometry, flat(colors.rock ?? "#a89d8d"))
   rock.position.set(cx, (top + bottom) / 2, cz)
-  scene.add(rock)
+  scene.add(markStatic(rock))
   if (colors.cap !== null) {
     const cap = mesh(
       jitter(
@@ -39,7 +40,7 @@ export const cliff = (
       flat(colors.cap ?? "#76bf4c")
     )
     cap.position.set(cx, top + 0.1, cz)
-    scene.add(cap)
+    scene.add(markStatic(cap))
   }
   world.createCollider(rapier.ColliderDesc.cuboid(width / 2, height / 2, depth / 2).setTranslation(cx, (top + bottom) / 2, cz))
   return rock
@@ -51,10 +52,10 @@ export const steppingStone = (env: Env, x: number, z: number, radius: number, to
   const height = top + 3
   const stone = mesh(jitter(new THREE.CylinderGeometry(radius, radius * 1.15, height, 7, 2), 0.06), flat("#9d978b"))
   stone.position.set(x, top - height / 2, z)
-  scene.add(stone)
+  scene.add(markStatic(stone))
   const moss = mesh(new THREE.CylinderGeometry(radius * 0.9, radius * 0.95, 0.12, 7), flat("#7fbf58"))
   moss.position.set(x, top + 0.03, z)
-  scene.add(moss)
+  scene.add(markStatic(moss))
   world.createCollider(rapier.ColliderDesc.cylinder(height / 2, radius).setTranslation(x, top - height / 2, z))
 }
 
@@ -152,7 +153,7 @@ export const sign = (env: Env, x: number, z: number, emoji: string, facing = 0) 
   )
   picture.position.set(0, 1.5, 0.07)
   group.add(post, board, picture)
-  scene.add(group)
+  scene.add(markStatic(group))
   return group
 }
 
@@ -400,7 +401,7 @@ export class Gate {
       for (let x = x0 + 0.4; x < x1; x += 0.8) {
         const post = mesh(new THREE.BoxGeometry(0.6, height + Math.sin(x * 3) * 0.2, 0.3), Math.round(x * 2) % 2 ? wood : dark)
         post.position.set(x, center.y + height / 2, center.z)
-        scene.add(post)
+        scene.add(markStatic(post))
       }
       world.createCollider(rapier.ColliderDesc.cuboid(width / 2, height / 2 + 1, 0.4).setTranslation((x0 + x1) / 2, center.y + height / 2 - 1, center.z))
     }

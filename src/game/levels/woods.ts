@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { markStatic } from "../batching.ts"
 import { bounceCoach, rideCoach } from "../coaches.ts"
 import { createTree, scatter, type Patch } from "../nature.ts"
 import { cliff, Gate, logMesh, mushroom, Seesaw, sign } from "../props.ts"
@@ -216,7 +217,7 @@ export const woods: LevelDef = {
       const x = (Math.random() - 0.5) * 56
       const z = -55 + Math.random() * 90
       if (Math.abs(x) < 9 || streamMask(z) > 0 || Math.abs(z - FENCE_Z) < 2 || Math.abs(z - CLIFF.front) < 2) continue
-      mushroom(api, x, z, { capRadius: 0.3 + Math.random() * 0.3, height: 0.3 + Math.random() * 0.3, color: colors[i % colors.length]!, solid: false })
+      markStatic(mushroom(api, x, z, { capRadius: 0.3 + Math.random() * 0.3, height: 0.3 + Math.random() * 0.3, color: colors[i % colors.length]!, solid: false }).group)
     }
 
     api.nature({ grass: GRASS, butterflies: GRASS, flowers: [[-8, 28], [8, 30], [-12, 6], [12, 7], [-9, -10], [12, -18], [-8, -35], [9, -40]] })
