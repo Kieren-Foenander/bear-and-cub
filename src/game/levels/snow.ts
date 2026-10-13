@@ -102,9 +102,19 @@ export const snow: LevelDef = {
       object.add(slab, shine)
       object.rotation.y = i % 2 ? 0.1 : -0.08
       let sink = 0
+      let heavyLatch = 0
       const phase = i * 1.3
       const floe = surfaces.addPlatform(object, rapier.ColliderDesc.cuboid(size / 2, 0.15, size / 2), (t, weight, dt) => {
-        sink = damp(sink, weight >= 3 ? 1.9 : weight > 0 ? 0.08 : 0, weight >= 3 ? 2 : 5, dt)
+        // Mama counts as "on" this floe if any part of her overlaps it (not just her middle), and
+        // once it starts to crack it keeps going for a moment, so neighbouring floes can't hold her up.
+        const top = -0.1 - sink
+        const overlapping =
+          Math.abs(mama.position.x - spot.x) < size / 2 + mama.spec.radius &&
+          Math.abs(mama.position.z - spot.z) < size / 2 + mama.spec.radius &&
+          mama.feetY < top + 0.5 &&
+          mama.feetY > top - 1.2
+        heavyLatch = overlapping || weight >= 3 ? 0.9 : Math.max(0, heavyLatch - dt)
+        sink = damp(sink, heavyLatch > 0 ? 1.9 : weight > 0 ? 0.08 : 0, heavyLatch > 0 ? 2 : 5, dt)
         return new THREE.Vector3(spot.x, -0.25 - sink + Math.sin(t * 1.2 + phase) * 0.03, spot.z)
       })
       floes.push(floe)

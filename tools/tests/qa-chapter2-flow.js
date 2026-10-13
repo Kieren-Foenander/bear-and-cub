@@ -8,7 +8,7 @@ S.music.play = theme => { themes.push(theme); playTheme(theme) }
 S.sound.unlock()
 run(10); tap('Space'); run(10)
 assert(S.screen === 'map', 'start from the title')
-for (const [index, prerequisite] of [[5, 'mountain'], [6, 'night'], [7, 'snow'], [8, 'meadow']]) {
+for (const [index, prerequisite] of [[5, 'mountain'], [6, 'night'], [7, 'snow'], [8, 'autumn'], [9, 'meadow']]) {
   assert(LEVELS[index].unlockAfter === prerequisite && !S.unlocked(index), 'new level should require its named predecessor')
 }
 const finish = () => {
@@ -25,7 +25,7 @@ const finish = () => {
 }
 S.loadLevel(0); run(30)
 S.stage.swipes.targets.find(t => t.id === 'bell').onHit(S.stage.cub); run(200); finish()
-assert(S.unlocked(8) && !S.unlocked(5), 'Meadow should open Playground without opening Night')
+assert(S.unlocked(9) && !S.unlocked(5), 'Meadow should open Playground without opening Night')
 S.loadLevel(4); run(30)
 for (const target of S.stage.swipes.targets.filter(t => t.id.startsWith('pinecone'))) target.onHit(S.stage.cub)
 run(200); finish()
@@ -57,8 +57,8 @@ for (const id of ['hay', 'stump', 'tree']) {
 run(240); finish()
 assert(S.screen === 'credits' && menuText().includes('The End'), 'Autumn should show credits')
 tap('Space'); run(10)
-assert(S.screen === 'map', 'Autumn credits should return to the map')
-S.loadLevel(8); run(30); finish()
+assert(S.screen === 'map' && S.unlocked(8), 'Autumn credits should return to the map with the Beach open')
+S.loadLevel(9); run(30); finish()
 assert(S.screen === 'map', 'Playground should finish without finale credits')
 for (const id of ['night', 'snow', 'autumn', 'playground', 'menu']) assert(themes.includes(id), `music should select ${id}`)
 tap('KeyM')

@@ -4,7 +4,7 @@ run(30)
 for (const style of ['toy', 'classic']) {
   tap('Escape'); tap('KeyS'); tap('KeyS'); tap('Space'); tap('Escape'); run(30)
   assert(S.stage.cub.model.style === style, 'pause Bear look should select the next style')
-  for (const [index, name] of [[5, 'night'], [6, 'snow'], [7, 'autumn'], [8, 'playground']]) {
+  for (const [index, name] of [[5, 'night'], [6, 'snow'], [7, 'autumn'], [8, 'beach'], [9, 'playground']]) {
     S.loadLevel(index); run(30)
     const body = await (await fetch(`/tools/tests/${name}.js`)).text()
     await eval(`(async () => {\n${body}\n})()`)
@@ -13,6 +13,6 @@ for (const style of ['toy', 'classic']) {
     log('style journey passed', style, name)
   }
   // The previous journey may already be on its completion card.
-  S.loadLevel(8); run(30)
+  S.loadLevel(9); run(30)
 }
 log('qa style routes passed')

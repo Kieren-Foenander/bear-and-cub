@@ -52,8 +52,9 @@ export class Carrying {
         who: bear.spec.id,
         kind: "press",
         buttons: ["b"],
-        label: "Put down",
-        anchor: () => bear.position.clone().add(new THREE.Vector3(0, 2.4 * bear.spec.scale + 0.8, 0)),
+        label: "Drop it",
+        // Off to one side, so it never sits on top of Mama's "Put Cub down" prompt.
+        anchor: () => bear.position.clone().add(new THREE.Vector3(1.4, 2.4 * bear.spec.scale + 0.8, 0)),
         inRange: (b) => this.heldBy(b) !== undefined && !this.zones.some((zone) => this.inZone(b, zone)),
         enabled: () => this.heldBy(bear) !== undefined,
         onComplete: (b) => this.drop(b)

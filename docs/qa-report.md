@@ -149,13 +149,13 @@ All nine level playthroughs pass. Six gameplay/presentation issues were fixed, i
 
 #### QA2-06 — Two “Put down” prompts overlap when Cub holds an acorn on Mama
 
-- **Level:** 8, Autumn Orchard / shared carrying. **Severity:** P2, highest remaining usability concern. **Fixed:** no; prompt layout and action naming need a design choice.
+- **Level:** 8, Autumn Orchard / shared carrying. **Severity:** P2, highest remaining usability concern. **Fixed:** yes (after the round): Mama's prompt now says "Put Cub down", the item prompt says "Drop it" and sits 1.4 m to the side.
 - **Repro:** swipe the oak acorn down, pick it up as Cub, then have Mama pick up Cub. With both characters centered in the shared camera, their blue/pink B prompts overlap vertically and both say “Put down”. The active bear determines whether B releases Cub or drops the acorn, but the prompts do not name that distinction. Screenshot: `/tmp/shots/qa2-acorn-back.png`.
 - **Suggestion:** distinguish “Cub down” and “Acorn down”; trial a minimum **60 px** separation between projected prompt cards, or offset their anchors **0.8 m** to opposite sides. Check keyboard, one-controller switching and two-controller play before choosing the layout. Carrying, throws, delivery and restart remain recoverable.
 
 #### QA2-07 — Neighboring thin floes can keep Mama supported indefinitely
 
-- **Level:** 7, Snowy Slopes. **Severity:** P3, rule consistency. **Fixed:** no; changing support detection or floe arrangement is broader than a small QA fix.
+- **Level:** 7, Snowy Slopes. **Severity:** P3, rule consistency. **Fixed:** yes (after the round): each floe checks Mama's whole footprint and keeps cracking for 0.9 s, regression `qa-thin-ice.js`.
 - **Repro:** keep Cub away from the approach (e.g. `(-5, 3.5)`), walk Mama from `(2, 2.6)` toward `(3.5, -1.9)`, release the stick and wait **30 seconds**. Mama remains around `(2.65, -1.9)`, feet near **`-0.43 m`**, on the adjoining floe edges instead of falling in. A separate center landing at `(3.5, -1.9)` also survives 30 seconds. Screenshot: `/tmp/shots/qa2-mama-thin-ice-wait.png`.
 - **Evidence:** floes are **3.1 m** wide and centers are **2.2 m** apart along z, with lateral offsets. Mama's **0.7 m** capsule can be supported by a neighboring collider while the center ground ray assigns her weight to another floe. Their sinking behavior therefore does not reliably enforce “too thin for Mama”. No unsafe checkpoint or progression softlock was observed; falling into exposed water respawns her locally.
 - **Suggestion:** account for Mama's overlap with each floe's footprint (half-width **`1.55 + 0.70 m`**, feet within **0.5 m** above its top) and trial a **0.8–1.0 s** heavy-load latch through brief contact gaps. Preserve the broad floes and Cub's safety; shrinking them would make the child's task harder. Test this with Cub beside/on Mama before adopting it.

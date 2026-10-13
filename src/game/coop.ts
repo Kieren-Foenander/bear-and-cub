@@ -106,7 +106,7 @@ export class Coop {
       who: "mama",
       kind: "press",
       buttons: ["b"],
-      label: "Put down",
+      label: "Put Cub down",
       anchor: aboveMama,
       inRange: (bear) => !this.atAnySpot.some((at) => at(bear)),
       enabled: () => this.carrying,
