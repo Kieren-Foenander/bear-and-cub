@@ -284,3 +284,57 @@ export class Snowfall {
     position.needsUpdate = true
   }
 }
+
+/** A busy little squirrel with a big fluffy tail. `cheer()` makes it hop about happily. */
+export class Squirrel {
+  readonly group = new THREE.Group()
+  private readonly tail = new THREE.Group()
+  private hop = 0
+  private time = Math.random() * 10
+
+  constructor(scene: THREE.Scene, at: THREE.Vector3, scale = 1.4) {
+    const fur = flat("#c0612b")
+    const cream = flat("#f1d2a6")
+    const body = mesh(new THREE.IcosahedronGeometry(0.35, 1), fur)
+    body.scale.set(0.9, 1.15, 0.9)
+    body.position.y = 0.42
+    const tummy = mesh(new THREE.IcosahedronGeometry(0.22, 1), cream)
+    tummy.position.set(0, 0.38, 0.2)
+    const head = mesh(new THREE.IcosahedronGeometry(0.25, 1), fur)
+    head.position.set(0, 0.85, 0.08)
+    this.group.add(body, tummy, head)
+    for (const side of [-1, 1]) {
+      const ear = mesh(new THREE.ConeGeometry(0.07, 0.18, 4), fur)
+      ear.position.set(side * 0.13, 1.08, 0.04)
+      const eye = mesh(new THREE.IcosahedronGeometry(0.05, 1), flat("#1e1a18"))
+      eye.position.set(side * 0.1, 0.9, 0.3)
+      this.group.add(ear, eye)
+    }
+    const nose = mesh(new THREE.IcosahedronGeometry(0.035, 0), flat("#3a2a20"))
+    nose.position.set(0, 0.83, 0.33)
+    this.group.add(nose)
+    for (let i = 0; i < 4; i++) {
+      const puff = mesh(new THREE.IcosahedronGeometry(0.22 - i * 0.02, 1), i % 2 ? cream : fur)
+      puff.position.set(0, 0.25 + i * 0.25, -0.35 - Math.sin(i * 0.8) * 0.25)
+      this.tail.add(puff)
+    }
+    this.tail.position.set(0, 0.1, -0.1)
+    this.group.add(this.tail)
+    this.group.position.copy(at)
+    this.group.scale.setScalar(scale)
+    scene.add(this.group)
+  }
+
+  cheer() {
+    this.hop = 1.5
+  }
+
+  update(dt: number) {
+    this.time += dt
+    this.hop = Math.max(0, this.hop - dt)
+    const bounce = Math.abs(Math.sin(this.time * 9)) * Math.min(1, this.hop) * 0.6
+    this.group.position.y = (this.group.userData.baseY ??= this.group.position.y) + bounce
+    this.tail.rotation.x = Math.sin(this.time * 3) * 0.15 - bounce * 0.5
+    this.group.rotation.z = Math.sin(this.time * 2) * 0.03
+  }
+}

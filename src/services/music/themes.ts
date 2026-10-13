@@ -1,4 +1,4 @@
-export type ThemeId = "menu" | "meadow" | "creek" | "pond" | "woods" | "mountain" | "playground" | "night" | "snow"
+export type ThemeId = "menu" | "meadow" | "creek" | "pond" | "woods" | "mountain" | "playground" | "night" | "snow" | "autumn"
 export type Instrument = "felt" | "pluck" | "marimba"
 export type Ambience = "birds" | "water" | "crickets" | "wind" | "none"
 
@@ -61,6 +61,11 @@ export const THEMES: Record<ThemeId, Theme> = {
     bpm: 84, instrument: "marimba", ambience: "wind", density: 0.42, swing: 0.06, seed: 131,
     melody: [[5, 4, 2, 4, 3, 0], [2, 3, 4, 5, 7, 5], [4, 3, 2, 1, 2, 0]],
     rhythm: [0, 2, 6, 8, 12, 14], harmony: [0, 2, 3, 0, 1, 3, 2, 0]
+  },
+  autumn: {
+    bpm: 88, instrument: "pluck", ambience: "birds", density: 0.5, swing: 0.1, seed: 149,
+    melody: [[2, 0, 1, 2, 4, 2], [4, 5, 4, 2, 3, 1], [0, 2, 3, 2, 1, 0]],
+    rhythm: [0, 3, 6, 8, 11, 14], harmony: [3, 0, 2, 1, 3, 0, 1, 0]
   },
   playground: {
     bpm: 104, instrument: "marimba", ambience: "birds", density: 0.6, swing: 0.14, seed: 97,

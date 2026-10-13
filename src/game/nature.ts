@@ -23,10 +23,10 @@ export const createTree = (
   env: Env,
   x: number,
   z: number,
-  options: { scale?: number; kind?: "pine" | "round"; rand?: () => number; snowy?: boolean } = {}
+  options: { scale?: number; kind?: "pine" | "round"; rand?: () => number; snowy?: boolean; autumn?: boolean } = {}
 ) => {
   const { scene, rapier, world } = env
-  const { scale = 1, kind = "pine", rand = Math.random, snowy = false } = options
+  const { scale = 1, kind = "pine", rand = Math.random, snowy = false, autumn = false } = options
   const y = env.terrain.heightAt(x, z)
   const tree = new THREE.Group()
   tree.position.set(x, y - 0.2, z)
@@ -45,7 +45,7 @@ export const createTree = (
       tree.add(cone)
     }
   } else {
-    const greens = snowy ? ["#e8f0f8", "#f6f9fc", "#dfe9f3"] : ["#5fb35a", "#6cc062", "#4fa152"]
+    const greens = snowy ? ["#e8f0f8", "#f6f9fc", "#dfe9f3"] : autumn ? (rand() > 0.5 ? ["#e07a2e", "#f2a03a", "#d9502b"] : ["#f2b632", "#e8962f", "#f4c64a"]) : ["#5fb35a", "#6cc062", "#4fa152"]
     for (let i = 0; i < 3; i++) {
       const blob = mesh(jitter(new THREE.IcosahedronGeometry(1.3 - i * 0.2, 1), 0.12), flat(greens[i]!))
       blob.position.set((i - 1) * 0.7, 3.2 + (i % 2) * 0.7, (i % 2) * 0.4)
@@ -348,7 +348,7 @@ export class Butterflies {
 /** Sprinkle trees and rocks over a level, avoiding anywhere `blocked` says no. */
 export const scatter = (
   env: Env,
-  options: { seed: number; trees: number; rocks: number; blocked: (x: number, z: number, margin: number) => boolean; kinds?: ReadonlyArray<"pine" | "round">; snowy?: boolean }
+  options: { seed: number; trees: number; rocks: number; blocked: (x: number, z: number, margin: number) => boolean; kinds?: ReadonlyArray<"pine" | "round">; snowy?: boolean; autumn?: boolean }
 ) => {
   const rand = seeded(options.seed)
   const { minX, maxX, minZ, maxZ } = env.terrain.bounds
@@ -358,7 +358,7 @@ export const scatter = (
   for (let attempt = 0; attempt < options.trees * 12 && trees < options.trees; attempt++) {
     const [x, z] = pick()
     if (options.blocked(x, z, 1) || env.terrain.heightAt(x, z) < env.terrain.waterY + 0.5) continue
-    createTree(env, x, z, { scale: 0.8 + rand() * 0.6, kind: kinds[Math.floor(rand() * kinds.length)]!, rand, snowy: options.snowy ?? false })
+    createTree(env, x, z, { scale: 0.8 + rand() * 0.6, kind: kinds[Math.floor(rand() * kinds.length)]!, rand, snowy: options.snowy ?? false, autumn: options.autumn ?? false })
     trees++
   }
   let rocks = 0
