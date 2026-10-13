@@ -77,6 +77,7 @@ export class ClassicBear implements BearStyleModel {
     if (this.hat) this.rig.head.remove(this.hat)
     this.hat = hat
     if (!hat) return
+    hat.scale.setScalar(1)
     hat.position.set(0, this.rig.cub ? 0.44 : 0.4, -0.04)
     hat.rotation.x = -0.15
     hat.traverse((object) => {

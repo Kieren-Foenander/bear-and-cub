@@ -77,6 +77,7 @@ export class OrigamiBear implements BearStyleModel {
     if (this.hat) this.rig.head.remove(this.hat)
     this.hat = hat
     if (!hat) return
+    hat.scale.setScalar(1)
     hat.position.copy(this.rig.hatAnchor)
     hat.rotation.x = -0.12
     hat.traverse((object) => {
