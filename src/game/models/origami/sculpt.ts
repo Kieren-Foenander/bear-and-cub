@@ -139,12 +139,13 @@ export const ringY = (y: number, hw: number, hd: number, c: number, cx = 0, cz =
   ]
 }
 
-/** A chamfered rectangle (octagon) in the XY plane at depth z. */
-export const ringZ = (z: number, hw: number, hh: number, c: number, cx = 0, cy = 0): THREE.Vector3[] => {
+/** A chamfered rectangle (octagon) in the XY plane at depth z; the bottom corners may be cut differently. */
+export const ringZ = (z: number, hw: number, hh: number, c: number, cx = 0, cy = 0, cb = c): THREE.Vector3[] => {
   c = Math.min(c, hw * 0.95, hh * 0.95)
+  cb = Math.min(cb, hw * 0.95, hh * 0.95)
   return [
-    v(cx + hw - c, cy + hh, z), v(cx + hw, cy + hh - c, z), v(cx + hw, cy - hh + c, z), v(cx + hw - c, cy - hh, z),
-    v(cx - hw + c, cy - hh, z), v(cx - hw, cy - hh + c, z), v(cx - hw, cy + hh - c, z), v(cx - hw + c, cy + hh, z)
+    v(cx + hw - c, cy + hh, z), v(cx + hw, cy + hh - c, z), v(cx + hw, cy - hh + cb, z), v(cx + hw - cb, cy - hh, z),
+    v(cx - hw + cb, cy - hh, z), v(cx - hw, cy - hh + cb, z), v(cx - hw, cy + hh - c, z), v(cx - hw + c, cy + hh, z)
   ]
 }
 
@@ -159,13 +160,23 @@ export const ringX = (x: number, hh: number, hd: number, c: number, cy = 0, cz =
 
 const shared = new Map<string, THREE.MeshStandardMaterial>()
 
-/** Shared vertex-coloured flat materials; colour lives in the geometry, so both bears share these. */
+/**
+ * Shared vertex-coloured flat materials; colour lives in the geometry, so both bears share these.
+ * Each facet also glows faintly in its own colour, like lit paper, so shaded sides stay warm
+ * instead of picking up the meadow's green bounce light and going muddy.
+ */
 export const origamiMaterial = (kind: "matte" | "gloss"): THREE.MeshStandardMaterial => {
   let material = shared.get(kind)
   if (!material) {
     material = new THREE.MeshStandardMaterial({
       vertexColors: true, flatShading: true, metalness: 0, roughness: kind === "gloss" ? 0.22 : 0.88
     })
+    const glow = kind === "gloss" ? "0.1" : "0.3"
+    material.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace("#include <emissivemap_fragment>",
+        `#include <emissivemap_fragment>\n\ttotalEmissiveRadiance += vColor.rgb * ${glow};`)
+    }
+    material.customProgramCacheKey = () => `origami-${kind}`
     shared.set(kind, material)
   }
   return material

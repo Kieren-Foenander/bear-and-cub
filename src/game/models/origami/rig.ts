@@ -114,11 +114,12 @@ export class OrigamiRig {
   constructor(root: THREE.Object3D, look: BearLook) {
     this.cub = look.kind === "cub"
     const d = this.cub ? CUB : MAMA
-    const fur = new THREE.Color(look.fur)
-    const belly = new THREE.Color(look.belly)
+    // A gentle warm lift keeps the look colours but stops darker browns going muddy in shade.
+    const fur = new THREE.Color(look.fur).offsetHSL(0, 0, 0.04)
+    const belly = new THREE.Color(look.belly).offsetHSL(0, 0, 0.03)
     const furLight = tint(fur, "#fff1dc", 0.07)
     const furDeep = tint(fur, "#3b2418", 0.14)
-    const pad = tint(belly, "#7a4b3a", 0.22)
+    const pad = tint(belly, "#f2a0a8", 0.3)
     const pinkEar = tint(belly, "#f29aa6", 0.45)
     const blush = tint(belly, "#f0687e", 0.62)
     const ink = new THREE.Color("#2a1e26")
@@ -146,8 +147,8 @@ export class OrigamiRig {
     this.tail.position.set(...d.tail)
     this.body.add(this.tail)
     const tailSculpt = new Sculpt()
-    tailSculpt.loft([ringZ(0.02, 0.08, 0.08, 0.04), ringZ(-0.08, 0.13, 0.13, 0.06), ringZ(-0.2, 0.08, 0.08, 0.04)],
-      (c) => c.z < -0.15 ? furLight : fur)
+    tailSculpt.loft([ringZ(0.04, 0.1, 0.1, 0.05), ringZ(-0.08, 0.16, 0.15, 0.08), ringZ(-0.2, 0.15, 0.14, 0.075),
+      ringZ(-0.27, 0.09, 0.085, 0.045)], (c) => c.z < -0.14 ? belly : fur)
     bake(this.tail, tailSculpt)
 
     this.buildHead(d, look, { fur, belly, furLight, furDeep, pinkEar, blush, ink, shine, mouth, tongue })
@@ -178,7 +179,7 @@ export class OrigamiRig {
     const front = d.face + s.length
     const back = d.face - 0.09
     const taper = [[back, 1, 1, 0.075], [d.face + s.length * 0.55, 0.93, 0.9, 0.07], [front, 0.8, 0.74, 0.055]] as const
-    skull.loft(taper.map(([z, w, h, ch]) => ringZ(z, s.hw * w, s.hh * h, ch, 0, s.bottom + s.hh * h)), belly)
+    skull.loft(taper.map(([z, w, h, ch]) => ringZ(z, s.hw * w, s.hh * h, ch, 0, s.bottom + s.hh * h, 0.008)), belly)
     // Nose: a glossy rounded triangle on the tip, with one tiny glint.
     const k = this.cub ? 0.85 : 1
     const nose = ([[-0.085, 0.035], [0.085, 0.035], [0.065, -0.025], [0.02, -0.05], [-0.02, -0.05], [-0.065, -0.025]] as const)
@@ -190,11 +191,17 @@ export class OrigamiRig {
       front + 0.028, front + 0.042, 0.2, c.shine!)
 
     // A dark mouth inside, seen through the seam and when the jaw drops, plus a line up to the nose.
-    skull.loft([ringZ(d.face - 0.04, s.hw * 0.8, 0.06, 0.03, 0, s.bottom - 0.03),
-      ringZ(front - 0.03, s.hw * 0.66, 0.05, 0.03, 0, s.bottom - 0.03)], c.mouth!)
+    skull.loft([ringZ(d.face - 0.04, s.hw * 0.56, 0.06, 0.03, 0, s.bottom - 0.03),
+      ringZ(front - 0.03, s.hw * 0.5, 0.05, 0.03, 0, s.bottom - 0.03)], c.mouth!)
+    // A line from the nose down to a small smile.
     const noseBottom = noseY - 0.045 * k
-    skull.loft([ringZ(front - 0.02, 0.011, (noseBottom - s.bottom) / 2, 0.004, 0, (noseBottom + s.bottom) / 2),
-      ringZ(front + 0.005, 0.011, (noseBottom - s.bottom) / 2, 0.004, 0, (noseBottom + s.bottom) / 2)], c.ink!)
+    const lip = s.bottom + 0.012
+    skull.loft([ringZ(front - 0.02, 0.011, (noseBottom - lip) / 2, 0.004, 0, (noseBottom + lip) / 2),
+      ringZ(front + 0.005, 0.011, (noseBottom - lip) / 2, 0.004, 0, (noseBottom + lip) / 2)], c.ink!)
+    for (const side of [-1, 1]) {
+      const smile: [number, number][] = [[0, lip - 0.01], [side * 0.012, lip - 0.012], [side * 0.07 * k, lip + 0.012], [side * 0.062 * k, lip + 0.022]]
+      skull.slab(side < 0 ? smile.reverse() : smile, front - 0.02, front + 0.005, 0.05, c.ink!)
+    }
 
     // Blushing cheeks sit on the face, just outside the snout.
     for (const side of [-1, 1]) {
@@ -206,7 +213,7 @@ export class OrigamiRig {
     this.jaw.position.set(hx, hy + s.bottom, hz + back)
     this.head.add(this.jaw)
     const jaw = new Sculpt()
-    jaw.loft(taper.map(([z, w, h]) => ringZ(z - back, s.hw * w * 0.97, s.jaw * h, 0.035, 0, -s.jaw * h)), belly)
+    jaw.loft(taper.map(([z, w, h]) => ringZ(z - back, s.hw * w * 0.985, s.jaw * h, 0.008, 0, -s.jaw * h, 0.04)), belly)
     jaw.loft([ringZ(0.08, s.hw * 0.5, 0.012, 0.01, 0, -0.006), ringZ(front - back - 0.05, s.hw * 0.42, 0.012, 0.01, 0, -0.006)], c.tongue!)
     bake(this.jaw, jaw, "matte", "jaw")
 
@@ -347,14 +354,19 @@ export class OrigamiRig {
     hip.add(knee)
     this.knees.push(knee)
     const lower = new Sculpt()
-    const g = -d.knee
+    const g = -d.knee + 0.014
     const p = d.paw
     lower.loft([
       ringY(0.08, w * 0.94, w * 0.96, w * 0.36),
       ringY(g + 0.17 * p, w * 0.98, w * 1.0, w * 0.38),
       ringY(g + 0.1 * p, w * 1.12, w * 1.22, w * 0.45, 0, 0.05),
       ringY(g, w * 1.04, w * 1.14, w * 0.42, 0, 0.055)
-    ], (c, n) => n.y < -0.9 ? pad : c.y < g + 0.11 && n.z > 0.5 ? furDeep : fur)
+    ], (_, n) => n.y < -0.9 ? furDeep : fur)
+    // A paw print on each sole: one big pad and three toe beans, shown off by swipes and cheers.
+    lower.place(0, g, 0.055, Math.PI / 2)
+    lower.dot(0, -w * 0.18, -0.006, w * 0.52, w * 0.4, 0.022, pad, 8, 0.75)
+    for (const toe of [-1, 0, 1]) lower.dot(toe * w * 0.5, w * 0.55 - Math.abs(toe) * w * 0.12, -0.006, w * 0.19, w * 0.19, 0.02, pad, 6, 0.7)
+    lower.place()
     bake(knee, lower, "matte", "paw")
   }
 }

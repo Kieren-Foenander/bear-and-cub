@@ -264,18 +264,19 @@ export class OrigamiBear implements BearStyleModel {
       }
     }
 
-    // Swipe: a quick wind-up, then one front paw arcs high up and forward, pad first.
+    // Swipe: a quick wind-up, then one front paw lifts from the shoulder and arcs high up and
+    // forward, pad first, well above the ears so it reads at the top of a jump.
     const swipe = envelope(this.swipeTime, 0.36, 0.05, 0.12)
     const arc = smooth((this.swipeTime - 0.03) / 0.1)
-    p[P.FrontRight] = mix(p[P.FrontRight]!, mix(0.45, -2.75, arc), swipe)
-    p[P.KneeFrontRight] = mix(p[P.KneeFrontRight]!, mix(0.2, -0.15, arc), swipe)
-    p[P.SplayFrontRight] = mix(p[P.SplayFrontRight]!, 0.22, swipe)
-    p[P.LiftFrontRight] += swipe * (cub ? 0.3 : 0.16)
+    p[P.FrontRight] = mix(p[P.FrontRight]!, mix(0.45, -2.7, arc), swipe)
+    p[P.KneeFrontRight] = mix(p[P.KneeFrontRight]!, mix(0.3, -0.25, arc), swipe)
+    p[P.SplayFrontRight] = mix(p[P.SplayFrontRight]!, 0.3, swipe)
+    p[P.LiftFrontRight] += swipe * arc * (cub ? 0.55 : 0.5)
     p[P.HeadPitch] -= swipe * 0.15
-    p[P.HeadYaw] += swipe * 0.12
-    p[P.Roll] -= swipe * 0.1
-    p[P.Pitch] -= swipe * 0.12
-    p[P.Mouth] = Math.max(p[P.Mouth]!, swipe * 0.45)
+    p[P.HeadYaw] += swipe * 0.15
+    p[P.Roll] -= swipe * 0.12
+    p[P.Pitch] -= swipe * 0.28
+    p[P.Mouth] = Math.max(p[P.Mouth]!, swipe * 0.5)
 
     // Shake: a wet-dog shimmy from the nose back.
     const shake = envelope(this.shakeTime, 0.85, 0.08, 0.2)
