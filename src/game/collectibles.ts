@@ -26,6 +26,17 @@ export class Berries {
   private readonly quaternion = new THREE.Quaternion()
   private readonly scale = new THREE.Vector3()
   private readonly axis = new THREE.Vector3(0, 1, 0)
+  private glowAmount = 0
+
+  /** Make the berries glow a little, so they're easy to see at night. */
+  glow(amount: number) {
+    this.glowAmount = amount
+  }
+
+  /** Has the berry added at `index` been collected? */
+  taken(index: number) {
+    return this.berries[index]?.taken ?? false
+  }
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -46,6 +57,7 @@ export class Berries {
   add(position: THREE.Vector3, height = 0.7) {
     const home = position.clone().add(new THREE.Vector3(0, height, 0))
     this.berries.push({ home, position: home.clone(), phase: Math.random() * 10, taken: false, pop: 0 })
+    return this.berries.length - 1
   }
 
   /** `count` berries evenly spaced from a to b (heights taken from a/b's y). */
@@ -85,7 +97,7 @@ export class Berries {
     }
     parts.push(painted(new THREE.ConeGeometry(0.12, 0.12, 5).rotateX(Math.PI).translate(0, 0.3, 0), "#4fa152"))
     const geometry = mergeGeometries(parts)!
-    this.mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.6 }), Math.max(1, this.berries.length))
+    this.mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.6, emissive: "#ff3355", emissiveIntensity: this.glowAmount }), Math.max(1, this.berries.length))
     this.mesh.castShadow = true
     this.mesh.frustumCulled = false
     this.scene.add(this.mesh)

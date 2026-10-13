@@ -345,3 +345,81 @@ export class HangingPinecone {
     }
   }
 }
+
+/**
+ * A paper lantern hanging from a post. Jump and swipe it to light it up: it glows warmly and
+ * stays lit. Used for the night level.
+ */
+export class Lantern {
+  lit = false
+  private readonly body: THREE.MeshStandardMaterial
+  private readonly halo: THREE.Mesh
+  private readonly group = new THREE.Group()
+  private time = Math.random() * 10
+
+  constructor(ctx: SwipeThingContext, at: THREE.Vector3, onLit: () => void, color: THREE.ColorRepresentation = "#ffb347") {
+    const { scene, rapier, world, swipes } = ctx
+    const ground = at.y
+    const target = new THREE.Vector3(at.x, ground + hangHeight(CUB, 1.6), at.z)
+    const armY = ground + 3.4
+    const wood = flat("#6b4a2a")
+    const post = mesh(new THREE.BoxGeometry(0.28, 3.6, 0.28), wood)
+    post.position.set(at.x, ground + 1.8, at.z - 1.4)
+    scene.add(post)
+    world.createCollider(rapier.ColliderDesc.cuboid(0.14, 1.8, 0.14).setTranslation(at.x, ground + 1.8, at.z - 1.4))
+    const arm = mesh(new THREE.BoxGeometry(0.2, 0.2, 1.7), wood)
+    arm.position.set(at.x, armY, at.z - 0.6)
+    scene.add(arm)
+    const string = mesh(new THREE.CylinderGeometry(0.03, 0.03, armY - target.y - 0.4, 4), flat("#d8c49a"), { castShadow: false })
+    string.position.set(at.x, (armY + target.y + 0.4) / 2, at.z)
+    scene.add(string)
+
+    this.body = new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.6, emissive: color, emissiveIntensity: 0.08 })
+    const paper = mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.6, 8), this.body)
+    paper.scale.set(1, 1, 1)
+    const capMaterial = flat("#3a2a20")
+    const top = mesh(new THREE.CylinderGeometry(0.2, 0.34, 0.1, 8), capMaterial)
+    top.position.y = 0.35
+    const bottom = mesh(new THREE.CylinderGeometry(0.34, 0.2, 0.1, 8), capMaterial)
+    bottom.position.y = -0.35
+    this.group.add(paper, top, bottom)
+    this.halo = new THREE.Mesh(
+      new THREE.SphereGeometry(1.1, 12, 8),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })
+    )
+    this.group.add(this.halo)
+    this.group.position.copy(target)
+    scene.add(this.group)
+
+    swipes.add(
+      {
+        id: `lantern-${at.x.toFixed(1)}-${at.z.toFixed(1)}`,
+        who: ["cub"],
+        position: () => target,
+        horizontalReach: 1.1,
+        verticalReach: 0.4,
+        enabled: () => !this.lit,
+        onHit: () => {
+          this.lit = true
+          ctx.sound("found")
+          ctx.particles.burst(target, { colors: ["#fff3b0", "#ffd84d", "#ffffff"], count: 24, speed: 3, up: 1, gravity: 0.05 })
+          onLit()
+        },
+        glow: (amount) => {
+          if (!this.lit) this.body.emissiveIntensity = damp(this.body.emissiveIntensity, 0.08 + amount * 0.5, 12, 1 / 60)
+        }
+      },
+      { who: "cub" }
+    )
+  }
+
+  update(dt: number) {
+    this.time += dt
+    this.group.rotation.z = Math.sin(this.time * 1.3) * 0.06
+    if (this.lit) {
+      this.body.emissiveIntensity = damp(this.body.emissiveIntensity, 1.6 + Math.sin(this.time * 6) * 0.15, 4, dt)
+      const material = this.halo.material as THREE.MeshBasicMaterial
+      material.opacity = damp(material.opacity, 0.22 + Math.sin(this.time * 3) * 0.04, 3, dt)
+    }
+  }
+}

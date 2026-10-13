@@ -27,6 +27,8 @@ export interface StageApi extends Env {
   readonly shake: (amount: number) => void
   /** The honey pot at the end. The level is complete when both bears reach it (once `open` says so). */
   readonly goal: (at: THREE.Vector3, open?: () => boolean) => void
+  /** How grippy the ground is at a spot: 1 = normal, ~0.1 = slippery ice. */
+  readonly setTraction: (traction: (x: number, z: number) => number) => void
   /** Tall grass, flowers that sing, and butterflies hidden in the grass. */
   readonly nature: (options: {
     grass?: ReadonlyArray<Patch>
@@ -56,7 +58,17 @@ export interface LevelDef {
   readonly unlockAfter?: string
   /** Finishing this level rolls the credits. */
   readonly finale?: boolean
-  readonly sky?: { readonly color: THREE.ColorRepresentation; readonly fog: THREE.ColorRepresentation }
+  readonly sky?: {
+    readonly color: THREE.ColorRepresentation
+    readonly fog: THREE.ColorRepresentation
+    /** Sky/ground fill light. Defaults to a bright day. */
+    readonly hemisphere?: { readonly sky: THREE.ColorRepresentation; readonly ground: THREE.ColorRepresentation; readonly intensity: number }
+    /** The sun (or moon). */
+    readonly sun?: { readonly color: THREE.ColorRepresentation; readonly intensity: number }
+    /** How far you can see before the fog. */
+    readonly fogNear?: number
+    readonly fogFar?: number
+  }
   readonly terrain: TerrainDef
   /** Ground positions (y is ignored). */
   readonly spawn: { readonly mama: readonly [number, number]; readonly cub: readonly [number, number] }

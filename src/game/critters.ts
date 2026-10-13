@@ -127,3 +127,160 @@ export class Dragonfly {
     for (const [i, wing] of this.wings.entries()) wing.rotation.y = Math.sin(t * 60 + i) * 0.4
   }
 }
+
+/** A sleepy owl. `wake()` makes it hoot, flap and fly off into the night. */
+export class Owl {
+  readonly group = new THREE.Group()
+  private readonly wings: Array<THREE.Mesh> = []
+  private readonly lids: Array<THREE.Mesh> = []
+  private flight = -1
+  private time = 0
+  private readonly start: THREE.Vector3
+
+  constructor(scene: THREE.Scene, at: THREE.Vector3, private readonly flyTo: THREE.Vector3) {
+    const feathers = flat("#8a6a4a")
+    const chest = flat("#d9c3a0")
+    const body = mesh(new THREE.IcosahedronGeometry(0.6, 1), feathers)
+    body.scale.set(1, 1.15, 0.9)
+    body.position.y = 0.65
+    const belly = mesh(new THREE.IcosahedronGeometry(0.42, 1), chest)
+    belly.scale.set(1, 1.1, 0.6)
+    belly.position.set(0, 0.6, 0.28)
+    this.group.add(body, belly)
+    for (const side of [-1, 1]) {
+      const eye = mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.06, 12), flat("#fff3b0"))
+      eye.rotation.x = Math.PI / 2
+      eye.position.set(side * 0.2, 0.95, 0.5)
+      const pupil = mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.07, 10), flat("#1e1a18"))
+      pupil.rotation.x = Math.PI / 2
+      pupil.position.set(side * 0.2, 0.95, 0.53)
+      const lid = mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 12), feathers)
+      lid.rotation.x = Math.PI / 2
+      lid.position.set(side * 0.2, 0.95, 0.55)
+      this.lids.push(lid)
+      const tuft = mesh(new THREE.ConeGeometry(0.1, 0.3, 4), feathers)
+      tuft.position.set(side * 0.3, 1.35, 0.1)
+      tuft.rotation.z = -side * 0.4
+      const wing = mesh(new THREE.BoxGeometry(0.12, 0.7, 0.5), feathers)
+      wing.position.set(side * 0.6, 0.65, 0)
+      this.wings.push(wing)
+      this.group.add(eye, pupil, lid, tuft, wing)
+    }
+    const beak = mesh(new THREE.ConeGeometry(0.07, 0.18, 4), flat("#e0a030"))
+    beak.rotation.x = Math.PI / 2 + 0.4
+    beak.position.set(0, 0.82, 0.58)
+    this.group.add(beak)
+    this.group.position.copy(at)
+    this.start = at.clone()
+    this.group.scale.setScalar(1.3)
+    scene.add(this.group)
+  }
+
+  get awake() {
+    return this.flight >= 0
+  }
+
+  wake() {
+    if (this.flight < 0) this.flight = 0
+  }
+
+  update(dt: number) {
+    this.time += dt
+    if (this.flight < 0) {
+      // Sleepy: eyes closed, gentle breathing.
+      this.group.scale.y = 1.3 * (1 + Math.sin(this.time * 1.5) * 0.03)
+      return
+    }
+    this.flight += dt
+    for (const lid of this.lids) lid.visible = false
+    const flap = Math.sin(this.time * 18) * 0.9
+    this.wings[0]!.rotation.z = flap
+    this.wings[1]!.rotation.z = -flap
+    if (this.flight > 0.8) {
+      const t = Math.min(1, (this.flight - 0.8) / 3)
+      this.group.position.lerpVectors(this.start, this.flyTo, t * t)
+      this.group.position.y += Math.sin(t * Math.PI) * 3
+      if (t >= 1) this.group.visible = false
+    }
+  }
+}
+
+/** Glowing fireflies drifting around a point. One draw call for all of them. */
+export class Fireflies {
+  private readonly points: THREE.Points
+  private readonly homes: Float32Array
+  private readonly phases: Float32Array
+  private time = 0
+
+  constructor(scene: THREE.Scene, center: THREE.Vector3, spread: THREE.Vector3, count: number, color: THREE.ColorRepresentation = "#fff3a0") {
+    const positions = new Float32Array(count * 3)
+    this.homes = new Float32Array(count * 3)
+    this.phases = new Float32Array(count)
+    for (let i = 0; i < count; i++) {
+      this.homes[i * 3] = center.x + (Math.random() - 0.5) * spread.x
+      this.homes[i * 3 + 1] = center.y + Math.random() * spread.y
+      this.homes[i * 3 + 2] = center.z + (Math.random() - 0.5) * spread.z
+      this.phases[i] = Math.random() * 100
+    }
+    positions.set(this.homes)
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
+    this.points = new THREE.Points(
+      geometry,
+      new THREE.PointsMaterial({ color, size: 0.35, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })
+    )
+    this.points.frustumCulled = false
+    scene.add(this.points)
+  }
+
+  update(dt: number) {
+    this.time += dt
+    const position = this.points.geometry.attributes.position as THREE.BufferAttribute
+    const array = position.array as Float32Array
+    for (let i = 0; i < this.phases.length; i++) {
+      const p = this.phases[i]! + this.time
+      array[i * 3] = this.homes[i * 3]! + Math.sin(p * 0.7) * 1.2
+      array[i * 3 + 1] = this.homes[i * 3 + 1]! + Math.sin(p * 1.1) * 0.5
+      array[i * 3 + 2] = this.homes[i * 3 + 2]! + Math.cos(p * 0.6) * 1.2
+    }
+    position.needsUpdate = true
+    ;(this.points.material as THREE.PointsMaterial).opacity = 0.7 + Math.sin(this.time * 2.3) * 0.2
+  }
+}
+
+/** Gently falling snow that follows the action. */
+export class Snowfall {
+  private readonly points: THREE.Points
+  private readonly speeds: Float32Array
+  private time = 0
+
+  constructor(scene: THREE.Scene, count = 900, size = 40) {
+    const positions = new Float32Array(count * 3)
+    this.speeds = new Float32Array(count)
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * size
+      positions[i * 3 + 1] = Math.random() * 18
+      positions[i * 3 + 2] = (Math.random() - 0.5) * size
+      this.speeds[i] = 0.8 + Math.random() * 0.8
+    }
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
+    this.points = new THREE.Points(geometry, new THREE.PointsMaterial({ color: "#ffffff", size: 0.18, transparent: true, opacity: 0.85, depthWrite: false }))
+    this.points.frustumCulled = false
+    scene.add(this.points)
+  }
+
+  update(dt: number, focus: THREE.Vector3) {
+    this.time += dt
+    this.points.position.set(focus.x, focus.y - 2, focus.z)
+    const position = this.points.geometry.attributes.position as THREE.BufferAttribute
+    const array = position.array as Float32Array
+    for (let i = 0; i < this.speeds.length; i++) {
+      let y = array[i * 3 + 1]! - this.speeds[i]! * dt
+      if (y < 0) y += 18
+      array[i * 3 + 1] = y
+      array[i * 3] = array[i * 3]! + Math.sin(this.time + i) * 0.003
+    }
+    position.needsUpdate = true
+  }
+}

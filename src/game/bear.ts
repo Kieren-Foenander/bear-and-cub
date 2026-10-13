@@ -35,6 +35,8 @@ export interface BearContext {
   readonly onSplash: (bear: Bear) => void
   /** Buzz this bear's controller. */
   readonly rumble: (bear: Bear, strength: number, ms: number) => void
+  /** How grippy the ground is here (1 = normal, small = ice). */
+  readonly traction: (x: number, z: number) => number
   /** Colliders the ground ray should ignore (the bears themselves). */
   readonly isBear: (collider: RAPIER.Collider) => boolean
 }
@@ -184,7 +186,9 @@ export class Bear {
     const moveZ = flying || !pad ? 0 : pad.moveY
 
     if (!flying) {
-      const accel = this.grounded ? 14 : 6
+      // On ice you keep sliding: speeding up, slowing down and turning all take longer.
+      const grip = this.grounded && this.surfaceBelow === undefined ? this.ctx.traction(this.position.x, this.position.z) : 1
+      const accel = this.grounded ? 14 * grip : 6
       this.velocity.x = damp(this.velocity.x, moveX * this.spec.speed, accel, dt)
       this.velocity.z = damp(this.velocity.z, moveZ * this.spec.speed, accel, dt)
       if (Math.hypot(moveX, moveZ) > 0.15) this.yaw = dampAngle(this.yaw, Math.atan2(moveX, moveZ), 12, dt)

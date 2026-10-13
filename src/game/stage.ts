@@ -59,6 +59,7 @@ export class Stage {
   private flowers: Flowers | null = null
   private butterflies: Butterflies | null = null
   private goal: Goal | null = null
+  private traction: (x: number, z: number) => number = () => 1
   private time = 0
   private readonly lastRoar = { mama: -99, cub: -99 }
   private lastHug = -99
@@ -74,9 +75,10 @@ export class Stage {
     this.world = new rapier.World({ x: 0, y: -22, z: 0 })
 
     scene.background = new THREE.Color(def.sky?.color ?? "#9fd8ff")
-    scene.fog = new THREE.Fog(def.sky?.fog ?? "#bfe6ff", 45, 130)
-    scene.add(new THREE.HemisphereLight("#d8f0ff", "#6aa84f", 1.4))
-    this.sun = new THREE.DirectionalLight("#fff1d0", 2.4)
+    scene.fog = new THREE.Fog(def.sky?.fog ?? "#bfe6ff", def.sky?.fogNear ?? 45, def.sky?.fogFar ?? 130)
+    const hemisphere = def.sky?.hemisphere ?? { sky: "#d8f0ff", ground: "#6aa84f", intensity: 1.4 }
+    scene.add(new THREE.HemisphereLight(hemisphere.sky, hemisphere.ground, hemisphere.intensity))
+    this.sun = new THREE.DirectionalLight(def.sky?.sun?.color ?? "#fff1d0", def.sky?.sun?.intensity ?? 2.4)
     this.sun.castShadow = true
     this.sun.shadow.mapSize.set(2048, 2048)
     Object.assign(this.sun.shadow.camera, { left: -35, right: 35, top: 35, bottom: -35, near: 1, far: 140 })
@@ -100,6 +102,7 @@ export class Stage {
       surfaces: this.surfaces,
       sound: play,
       isBear: (collider: RAPIER.Collider) => bearColliders.has(collider.handle),
+      traction: (x: number, z: number) => this.traction(x, z),
       rumble: (bear: Bear, strength: number, ms: number) => services.rumble(bear.spec.id, strength, ms),
       onSplash: (bear: Bear) => {
         play("splash")
@@ -141,6 +144,9 @@ export class Stage {
       shake: (amount) => {
         this.cameraRig.shake(amount)
         services.rumble("both", Math.min(1, amount), 250)
+      },
+      setTraction: (traction) => {
+        this.traction = traction
       },
       goal: (at, open = () => true) => {
         this.goal = this.buildGoal(at, open)
