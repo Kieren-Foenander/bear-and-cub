@@ -15,7 +15,9 @@ a skill young players need yet. Pressing the right button at the right moment is
 | 5 | Move + jump together (running jump) | Creek Hop (L2): three streams, each wider, with a run-up coach | ✅ |
 | 6 | Precision landing | Lily Pond (L3): stones and shrinking lily pads; wobbly stones (L5) | ✅ |
 | 7 | Timing against something moving | Mushroom Woods (L4): super bounce, floating logs; stone lifts (L5) | ✅ |
-| 8 | Combining it all | Honey Mountain (L5) | ✅ |
+| 8 | Combining it all | Honey Mountain (L5), Firefly Night (L6) | ✅ |
+| 9 | Gentle steering (small stick movements) | Snowy Slopes (L7): slippery ice rink, thin ice floes | ✅ |
+| 10 | Holding a direction (sustained push) | Snowy Slopes (L7): pushing the giant snowball, ideally together | ✅ |
 
 ## Coaches
 

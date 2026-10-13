@@ -112,7 +112,7 @@ export class Menus {
         const result = progress.levels[level.id]
         const locked = !unlocked(i)
         const stats = result
-          ? `<div class="card-stats">🍓 ${result.berries}/${result.berriesTotal} &nbsp; 🦋 ${result.butterflies}/${result.butterfliesTotal}</div>`
+          ? `<div class="card-stats">🍓 ${result.berries}/${result.berriesTotal}${result.butterfliesTotal > 0 ? ` &nbsp; 🦋 ${result.butterflies}/${result.butterfliesTotal}` : ""}</div>`
           : `<div class="card-stats">&nbsp;</div>`
         return `<div class="card ${i === selected ? "selected" : ""} ${locked ? "locked" : ""} ${result?.done ? "done" : ""}">
           <div class="card-number">${i + 1}</div>
@@ -152,7 +152,7 @@ export class Menus {
        <div class="complete-sub">${level.title} complete</div>
        <div class="complete-stats">
          <div>🍓 ${stats.berries} / ${stats.berriesTotal}${berryStars}</div>
-         <div>🦋 ${stats.butterflies} / ${stats.butterfliesTotal}${butterflyStars}</div>
+         ${stats.butterfliesTotal > 0 ? `<div>🦋 ${stats.butterflies} / ${stats.butterfliesTotal}${butterflyStars}</div>` : ""}
        </div>
        ${newHat ? `<div class="new-hat">New hat for ${cubName}! <span>${newHat.emoji}</span> ${newHat.name}</div>` : ""}
        <div class="menu-hint">${buttonHtml("a", style)} ${last ? "the end…" : "next adventure"}</div>`

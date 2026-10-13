@@ -187,7 +187,7 @@ export class Bear {
 
     if (!flying) {
       // On ice you keep sliding: speeding up, slowing down and turning all take longer.
-      const grip = this.grounded && this.surfaceBelow === undefined ? this.ctx.traction(this.position.x, this.position.z) : 1
+      const grip = this.grounded ? this.ctx.traction(this.position.x, this.position.z) : 1
       const accel = this.grounded ? 14 * grip : 6
       this.velocity.x = damp(this.velocity.x, moveX * this.spec.speed, accel, dt)
       this.velocity.z = damp(this.velocity.z, moveZ * this.spec.speed, accel, dt)

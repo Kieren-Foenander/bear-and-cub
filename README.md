@@ -42,7 +42,7 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
 
 ## The adventure
 
-Five adventure levels, each teaching one new controller skill (see [docs/skills.md](docs/skills.md)),
+Seven adventure levels (five in chapter 1, two more in chapter 2), each teaching a controller skill (see [docs/skills.md](docs/skills.md)),
 plus a free-play park.
 Every level ends with both bears reaching the honey pot. Berries and butterflies are
 hidden everywhere for little explorers, and the level map remembers your best.
@@ -54,6 +54,8 @@ hidden everywhere for little explorers, and the level map remembers your best.
 | 3 | 🐸 Lily Pond | Landing on little things | Stepping stones · lily pads that sink under Mama · boop the frog to call the turtles up as Mama's path |
 | 4 | 🍄 Mushroom Woods | Timing against moving things | Super-bounce (press jump just before you land) over a fence · ride floating logs · seesaw launch · magic mushroom steps |
 | 5 | 🍯 Honey Mountain | Everything together | A four-tier climb using every skill, ending with the giant honeycomb |
+| 6 | 🌙 Firefly Night (chapter 2) | Light the lanterns | Swipe three lanterns to raise glowing stones · lift Cub up the ridge to boop a sleepy owl (rope ladder for Mama) · throw Cub to the moon-pond island to swipe the moon flower |
+| 7 | ❄️ Snowy Slopes (chapter 2) | Steering gently on slippery ice | Ice rink · thin ice floes that crack under Mama · bell → snow bridge · push a giant snowball into a crack (together is faster) |
 | ★ | 🎪 Bear Playground | Free play (opens after level 1) | Mushroom trampolines, musical bells, lily pond, seesaw up to a treehouse, a stream for running jumps |
 
 ## How it's built

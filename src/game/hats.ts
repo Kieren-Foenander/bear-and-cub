@@ -100,12 +100,43 @@ const partyHat = () => {
   return group
 }
 
+const nightcap = () => {
+  const group = new THREE.Group()
+  const cone = mesh(new THREE.ConeGeometry(0.3, 0.75, 10), flat("#5b6fd8"))
+  cone.position.set(0, 0.3, -0.1)
+  cone.rotation.x = -0.6
+  const band = mesh(new THREE.TorusGeometry(0.3, 0.07, 5, 12), flat("#ffffff"))
+  band.rotation.x = Math.PI / 2
+  const star = mesh(new THREE.IcosahedronGeometry(0.06, 0), flat("#ffe066"))
+  star.position.set(0.12, 0.3, 0.15)
+  const pom = mesh(new THREE.IcosahedronGeometry(0.09, 1), flat("#ffffff"))
+  pom.position.set(0, 0.48, -0.45)
+  group.add(cone, band, star, pom)
+  return group
+}
+
+const beanie = () => {
+  const group = new THREE.Group()
+  const dome = mesh(new THREE.SphereGeometry(0.36, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), flat("#e5484d"))
+  const cuff = mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.12, 14), flat("#ffffff"))
+  cuff.position.y = 0.04
+  const stripe = mesh(new THREE.TorusGeometry(0.3, 0.035, 4, 14), flat("#ffffff"))
+  stripe.rotation.x = Math.PI / 2
+  stripe.position.y = 0.2
+  const bobble = mesh(new THREE.IcosahedronGeometry(0.12, 1), flat("#ffffff"))
+  bobble.position.y = 0.4
+  group.add(dome, cuff, stripe, bobble)
+  return group
+}
+
 export const HATS: ReadonlyArray<Hat> = [
   { id: "flowers", name: "Flower crown", emoji: "🌸", unlockedBy: "meadow", build: flowerCrown },
   { id: "sailor", name: "Sailor hat", emoji: "⛵", unlockedBy: "creek", build: sailorHat },
   { id: "frog", name: "Frog hat", emoji: "🐸", unlockedBy: "pond", build: frogHat },
   { id: "mushroom", name: "Mushroom cap", emoji: "🍄", unlockedBy: "woods", build: mushroomCap },
   { id: "crown", name: "Golden crown", emoji: "👑", unlockedBy: "mountain", build: goldenCrown },
+  { id: "nightcap", name: "Sleepy nightcap", emoji: "🌙", unlockedBy: "night", build: nightcap },
+  { id: "beanie", name: "Bobble beanie", emoji: "❄️", unlockedBy: "snow", build: beanie },
   { id: "party", name: "Party hat", emoji: "🥳", unlockedBy: "playground", build: partyHat }
 ]
 
