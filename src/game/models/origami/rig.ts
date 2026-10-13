@@ -352,7 +352,7 @@ export class OrigamiRig {
     hip.add(knee)
     this.knees.push(knee)
     const lower = new Sculpt()
-    const g = -d.knee + 0.014
+    const g = -d.knee + 0.004
     const p = d.paw
     lower.loft([
       ringY(0.08, w * 0.94, w * 0.96, w * 0.36),
