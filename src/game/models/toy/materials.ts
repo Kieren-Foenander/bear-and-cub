@@ -12,7 +12,7 @@ export const vinyl = (): THREE.MeshStandardMaterial => {
       "#include <opaque_fragment>",
       `{
         float rim = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
-        outgoingLight += diffuseColor.rgb * vec3(1.0, 0.94, 0.86) * pow(rim, 2.6) * 0.42;
+        outgoingLight += diffuseColor.rgb * vec3(1.0, 0.94, 0.86) * pow(rim, 2.4) * 0.5;
       }
       #include <opaque_fragment>`
     )

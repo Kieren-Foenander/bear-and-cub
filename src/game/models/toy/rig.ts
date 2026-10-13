@@ -91,8 +91,8 @@ export class ToyRig {
     this.cub = cub
     const d = cub ? CUB : MAMA
     this.dims = d
-    const fur = toyTint(look.fur, cub ? 1.12 : 1.0, cub ? 0.06 : 0.06)
-    const cream = toyTint(look.belly, 1.05, 0.07)
+    const fur = toyTint(look.fur, cub ? 1.15 : 1.08, cub ? 0.09 : 0.11)
+    const cream = toyTint(look.belly, 1.05, 0.09)
     const innerEar = cream.clone().lerp(new THREE.Color("#ff9db2"), 0.4)
     const blush = new THREE.Color("#ff8ea4")
     const pad = cream.clone().lerp(new THREE.Color("#ffb3bf"), 0.3)

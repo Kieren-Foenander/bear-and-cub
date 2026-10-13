@@ -26,6 +26,8 @@ const SWIPE = 0.36
 const CHEER = 1.35
 const CELEBRATE = 2.1
 const SHAKE = 0.85
+/** One dance bar: two hops and one side-to-side sway. */
+const BAR = 1.05
 
 /** Chunky vinyl-toy bear: bobble head, bean body, stubby legs, lots of squash and stretch. */
 export class ToyBear implements BearStyleModel {
@@ -56,6 +58,7 @@ export class ToyBear implements BearStyleModel {
   private swipeTime = -1
   private cheerTime = -1
   private celebrateTime = -1
+  private danceIn = 0
   private shakeTime = -1
   private blinkTime = -1
   private blinkWait: number
@@ -90,7 +93,8 @@ export class ToyBear implements BearStyleModel {
   celebrate(): void {
     // A retrigger mid-twirl finishes the turn forwards instead of snapping back.
     this.spinCarry = this.spin % TAU
-    this.celebrateTime = 0
+    // Mid-dance, rewind to the same point in the beat so the hops never stutter.
+    this.celebrateTime = this.celebrateTime >= 0 ? this.celebrateTime % BAR : 0
     this.idleTime = 0
   }
   shake(): void { this.shakeTime = 0; this.idleTime = 0 }
@@ -215,20 +219,20 @@ export class ToyBear implements BearStyleModel {
     // Teddy-bear sit: rock back onto the bottom, hind legs straight out, soles showing.
     const sit = Math.max(this.sit, this.carried)
     p[P.Pitch] = mix(p[P.Pitch]!, cub ? -0.55 : -0.5, sit)
-    p[P.Y] -= sit * (cub ? 0.17 : 0.2)
+    p[P.Y] -= sit * (cub ? 0.3 : 0.33)
     p[P.Z] -= sit * 0.04
     p[P.HeadPitch] += sit * 0.38
     p[P.HeadY] += sit * 0.02
     for (let i = 0; i < 4; i++) {
       const front = i < 2
       const side = i % 2 === 0 ? -1 : 1
-      p[P.Swing + i] = mix(p[P.Swing + i]!, front ? 0.42 : -0.95, sit)
+      p[P.Swing + i] = mix(p[P.Swing + i]!, front ? 0.25 : -1.4, sit)
       p[P.Splay + i] = mix(p[P.Splay + i]!, side * (front ? 0.12 : 0.28), sit)
-      p[P.Lift + i] = mix(p[P.Lift + i]!, front ? 0.06 : 0.04, sit)
+      p[P.Lift + i] = mix(p[P.Lift + i]!, front ? (cub ? 0 : -0.06) : 0.2, sit)
     }
     // Riding on Mama's back: legs dangle over her sides and kick, paws pat, head looks around.
     const ride = this.carried
-    p[P.Y] -= ride * 0.36
+    p[P.Y] -= ride * 0.23
     p[P.Pitch] += ride * 0.22
     p[P.HeadYaw] += ride * Math.sin(t * 1.3) * 0.35
     p[P.HeadRoll] += ride * Math.sin(t * 1.9) * 0.1
@@ -273,25 +277,26 @@ export class ToyBear implements BearStyleModel {
     const roar = envelope(this.cheerTime - 0.15, CHEER - 0.15, 0.12, 0.3)
     // Celebrate: four happy hops, a twirl on the third, ta-da on the last.
     const ct = this.celebrateTime
-    const dance = envelope(ct, CELEBRATE, 0.15, 0.3)
-    const hopBeat = ct >= 0 ? Math.abs(Math.sin(Math.PI * ct / 0.525)) : 0
+    this.danceIn = ct >= 0 ? Math.min(1, this.danceIn + dt / 0.15) : 0
+    const dance = smooth(this.danceIn) * envelope(ct, CELEBRATE, 1e-3, 0.3)
+    const hopBeat = ct >= 0 ? Math.abs(Math.sin(TAU * ct / BAR)) : 0
     const tada = smooth((ct - 1.6) / 0.15)
     const rear = Math.max(cheer, dance * 0.6)
     p[P.Pitch] = mix(p[P.Pitch]!, -0.85, rear)
     p[P.Y] = mix(p[P.Y]!, 0.03, rear) + dance * hopBeat * 0.3
     p[P.HeadPitch] = mix(p[P.HeadPitch]!, 0.45 - roar * 0.25, rear)
-    p[P.HeadRoll] += dance * Math.sin(ct * 6) * 0.22 + cheer * Math.sin(this.cheerTime * 18) * 0.05
-    p[P.Roll] += dance * Math.sin(ct * 6) * 0.12
+    p[P.HeadRoll] += dance * Math.sin(ct * TAU / BAR) * 0.22 + cheer * Math.sin(this.cheerTime * 18) * 0.05
+    p[P.Roll] += dance * Math.sin(ct * TAU / BAR) * 0.12
     p[P.Mouth] = Math.max(p[P.Mouth]!, roar, dance * 0.75)
     p[P.Happy] = Math.max(p[P.Happy]!, dance, smooth((this.cheerTime - 0.5) / 0.1) * cheer)
     p[P.EarBack] += rear * 0.2
-    p[P.Tail] += dance * Math.sin(ct * 20) * 0.4
+    p[P.Tail] += dance * Math.sin(ct * TAU * 4 / BAR) * 0.4
     p[P.Scarf] += dance * hopBeat * 0.6
     for (let i = 0; i < 4; i++) {
       const front = i < 2
       const side = i % 2 === 0 ? -1 : 1
       if (front) {
-        const wave = dance * Math.sin(ct * 14 + i * Math.PI) * 0.45 * (1 - tada) + cheer * Math.sin(this.cheerTime * 16 + i * Math.PI) * 0.2
+        const wave = dance * Math.sin(ct * TAU * 2 / BAR + i * Math.PI) * 0.45 * (1 - tada) + cheer * Math.sin(this.cheerTime * 16 + i * Math.PI) * 0.2
         p[P.Swing + i] = mix(p[P.Swing + i]!, mix(-1.5, -2.3, tada * dance) + wave, rear)
         p[P.Splay + i] = mix(p[P.Splay + i]!, side * mix(0.45, 0.9, tada * dance), rear)
         p[P.Stretch + i] = mix(p[P.Stretch + i]!, 0.15, rear)
@@ -300,7 +305,7 @@ export class ToyBear implements BearStyleModel {
         p[P.Splay + i] = mix(p[P.Splay + i]!, side * 0.12, rear)
       }
     }
-    this.spin = ct >= 0 ? mix(this.spinCarry, TAU, smooth((ct - 1.05) / 0.5)) : 0
+    this.spin = ct >= 0 ? mix(this.spinCarry, TAU, smooth((ct - BAR) / 0.5)) : 0
     if (ct < 0) this.spinCarry = 0
 
     // Swipe: tiny wind-up, then the front-right paw arcs high and forward, stretching like vinyl.
@@ -309,23 +314,23 @@ export class ToyBear implements BearStyleModel {
     const strike = smooth((st - 0.04) / 0.09)
     const windup = st >= 0 ? smooth(st / 0.04) * (1 - strike) : 0
     // The big head would hide a normal reach, so she rocks back and the paw stretches up past it.
-    p[P.Swing + 1] = mix(p[P.Swing + 1]!, mix(0.6, -2.4, strike), swipe)
+    p[P.Swing + 1] = mix(p[P.Swing + 1]!, mix(0.6, cub ? -2.25 : -2.4, strike), swipe)
     p[P.Splay + 1] = mix(p[P.Splay + 1]!, mix(0.15, cub ? 0.56 : 0.5, strike), swipe)
-    p[P.Stretch + 1] = mix(p[P.Stretch + 1]!, strike * (cub ? 1.6 : 1.35), swipe)
-    p[P.Lift + 1] += swipe * strike * 0.4
+    p[P.Stretch + 1] = mix(p[P.Stretch + 1]!, strike * (cub ? 2.0 : 1.45), swipe)
+    p[P.Lift + 1] += swipe * strike * (cub ? 0.55 : 0.44)
     p[P.Swing + 0] = mix(p[P.Swing + 0]!, -0.6, swipe * 0.7)
-    p[P.Pitch] -= swipe * (strike * 0.5 - windup * 0.08)
+    p[P.Pitch] -= swipe * (strike * (cub ? 0.7 : 0.5) - windup * 0.08)
     p[P.Y] += swipe * strike * 0.05
     p[P.Roll] -= swipe * 0.1
     p[P.ScaleY] -= windup * 0.08
-    p[P.HeadRoll] -= swipe * strike * 0.22
+    p[P.HeadRoll] -= swipe * strike * (cub ? 0.34 : 0.22)
     p[P.HeadYaw] += swipe * 0.12
     p[P.HeadPitch] += swipe * strike * 0.2
     p[P.EarBack] += swipe * strike * 0.3
     p[P.Mouth] = Math.max(p[P.Mouth]!, swipe * strike * 0.6)
 
     // Shake: squint while the wobble itself is layered on after smoothing (see below).
-    const shake = envelope(this.shakeTime, SHAKE, 0.08, 0.25)
+    const shake = envelope(this.shakeTime, SHAKE, 0.12, 0.25)
     p[P.Happy] = Math.max(p[P.Happy]!, shake)
     p[P.EarBack] += shake * 0.2
 
