@@ -1,3 +1,4 @@
+import type RAPIER from "@dimforge/rapier3d-compat"
 import * as THREE from "three"
 import type { SoundName } from "../services/Sound.ts"
 import type { Bear } from "./bear.ts"
@@ -32,14 +33,18 @@ export class Carrying {
   private readonly items: Array<Carryable> = []
   private readonly zones: Array<DropZone> = []
   private readonly temp = new THREE.Vector3()
+  private readonly ray: RAPIER.Ray
 
   constructor(
     private readonly interactions: Interactions,
     private readonly bears: ReadonlyArray<Bear>,
     private readonly terrain: Terrain,
     private readonly particles: Particles,
-    private readonly sound: (name: SoundName) => void
+    private readonly sound: (name: SoundName) => void,
+    private readonly rapier: typeof RAPIER,
+    private readonly world: RAPIER.World
   ) {
+    this.ray = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 })
     for (const bear of bears) {
       // Put down, wherever you are (unless you're at a drop zone, which has its own prompt).
       interactions.add({
@@ -149,9 +154,26 @@ export class Carrying {
         // Dropped in the water? It bobs back to where it was picked up from would be confusing;
         // instead it just comes back down where the bear respawns (it stays held).
       } else if (item.state === "falling") {
+        const previousY = item.object.position.y
         item.velocity.y -= GRAVITY * dt
         item.object.position.addScaledVector(item.velocity, dt)
-        const floor = Math.max(this.terrain.heightAt(item.object.position.x, item.object.position.z), this.terrain.waterY + 0.3) + 0.3
+        // Raised hay stacks and stumps are colliders, not terrain. Cast from before the fall
+        // so a fast-moving acorn cannot pass through their tops; bears aren't item shelves.
+        this.ray.origin.x = item.object.position.x
+        this.ray.origin.y = Math.max(previousY, item.object.position.y)
+        this.ray.origin.z = item.object.position.z
+        const hit = this.world.castRay(
+          this.ray,
+          40,
+          true,
+          this.rapier.QueryFilterFlags.EXCLUDE_SENSORS,
+          undefined,
+          undefined,
+          undefined,
+          (collider) => !this.bears.some((bear) => bear.collider.handle === collider.handle)
+        )
+        const solidY = hit ? this.ray.origin.y - hit.timeOfImpact : -Infinity
+        const floor = Math.max(solidY, this.terrain.heightAt(item.object.position.x, item.object.position.z), this.terrain.waterY + 0.3) + 0.3
         if (item.object.position.y <= floor) {
           item.object.position.y = floor
           if (Math.abs(item.velocity.y) < 2) {
