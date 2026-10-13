@@ -181,7 +181,7 @@ export const playground: LevelDef = {
       inRange: (bear) => bear.position.distanceTo(seesaw.endA) < 4,
       enabled: () => true,
       view: (bear) =>
-        seesaw.sideOf(bear.position.clone().setY(bear.feetY)) === -1 ? { buttons: [], label: "Wait for Mama!" } : { buttons: ["move"], label: "Stand on pink!" }
+        seesaw.sideOf(bear.position.clone().setY(bear.feetY)) === -1 ? { buttons: [], label: "Wait for Mama!" } : { buttons: ["a"], label: "Jump onto pink!" }
     })
     updates.push((dt) => {
       seesaw.update(dt)
