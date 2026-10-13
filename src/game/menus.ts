@@ -129,7 +129,7 @@ export class Menus {
       `<div class="map-title">Where shall we go?</div>
        <div class="cards">${cards}</div>
        ${hatLine ? `<div class="hat-line">${hatLine}</div>` : ""}
-       <div class="menu-hint">${unlocked(selected) ? `◀ ▶ choose &nbsp; ${buttonHtml("a", style)} let's go!` : "🔒 Finish the one before to open this one!"}</div>`
+       <div class="menu-hint">${unlocked(selected) ? `◀ ▶ choose &nbsp; ${buttonHtml("a", style)} let's go!` : "🔒 Finish the one before to open this one!"} &nbsp; ${buttonHtml("y", style)} button practice</div>`
     )
   }
 

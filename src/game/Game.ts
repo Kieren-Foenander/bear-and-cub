@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect"
 import { Hud } from "../services/Hud.ts"
-import { type ButtonStyle, Input } from "../services/Input.ts"
+import { type ButtonStyle, Input, mergePads } from "../services/Input.ts"
 import { Music } from "../services/Music.ts"
 import { Physics } from "../services/Physics.ts"
 import { Renderer } from "../services/Renderer.ts"
@@ -13,10 +13,11 @@ import { BEAR_STYLES } from "./models/styles.ts"
 import { GameHud } from "./hud.ts"
 import { LEVELS } from "./levels/index.ts"
 import { type LevelStats, MenuNav, Menus } from "./menus.ts"
+import { ButtonPractice } from "./practice.ts"
 import { Prompts } from "./prompts.ts"
 import { Stage } from "./stage.ts"
 
-type Screen = "title" | "map" | "playing" | "paused" | "help" | "complete" | "credits"
+type Screen = "title" | "map" | "playing" | "paused" | "help" | "complete" | "credits" | "practice"
 
 const PAUSE_ITEMS = ["Keep playing", "How to play", "Bear look", "Start level again", "Back to the map"] as const
 /** How long to enjoy the celebration before the "You did it!" card. */
@@ -32,6 +33,7 @@ class Session {
   private readonly hud: GameHud
   private readonly prompts: Prompts
   private readonly menus: Menus
+  private readonly practice: ButtonPractice
   stage: Stage
   private levelIndex = 0
   screen: Screen = "title"
@@ -54,6 +56,7 @@ class Session {
     this.hud = new GameHud(hudRoot)
     this.prompts = new Prompts(hudRoot)
     this.menus = new Menus(hudRoot)
+    this.practice = new ButtonPractice(hudRoot, (name) => sound.play(name), (index) => sound.note(index))
     this.progress = save.load()
     setDefaultBearStyle(this.progress.bearStyle ?? "")
 
@@ -271,6 +274,14 @@ class Session {
         if (nav.left) this.mapSelected = Math.max(0, this.mapSelected - 1)
         if (nav.right) this.mapSelected = Math.min(LEVELS.length - 1, this.mapSelected + 1)
         if (nav.left || nav.right) this.sound.play("pop")
+        // Y: button practice.
+        if (this.input.devices().some((d) => d.state.pressed.y)) {
+          this.menus.hide()
+          this.practice.open()
+          this.screen = "practice"
+          this.sound.play("pickup")
+          return
+        }
         // Up / down tries on hats.
         const hats = this.unlockedHats()
         if ((nav.up || nav.down) && hats.length > 0) {
@@ -310,6 +321,14 @@ class Session {
           this.loadLevel(this.levelIndex)
         } else if (nav.confirm && this.pauseSelected === 4) {
           this.mapSelected = this.levelIndex
+          this.screen = "map"
+        }
+        return
+      }
+      case "practice": {
+        const pad = mergePads(this.input.devices().map((d) => d.state))
+        if (this.practice.update(dt, pad, style) === "exit") {
+          this.practice.close()
           this.screen = "map"
         }
         return

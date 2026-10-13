@@ -651,3 +651,45 @@ body {
 .new-hat span {
   font-size: 40px;
 }
+
+/* ---------- Button practice ---------- */
+
+.practice-garden {
+  font-size: 44px;
+  letter-spacing: 6px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 4px 22px;
+  border-radius: 999px;
+}
+
+.practice-garden .bloom {
+  display: inline-block;
+  animation: counter-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+.practice-big {
+  font-size: 150px;
+  line-height: 1.1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+
+.practice-stick span {
+  font-size: 110px;
+}
+
+.practice-text {
+  font-size: clamp(36px, 5vw, 60px);
+  font-weight: 800;
+  color: #5d4433;
+  text-shadow: 0 4px 0 #fff;
+}
+
+.practice-hint {
+  font-size: 30px;
+  font-weight: 800;
+  color: #d6457f;
+  min-height: 40px;
+}
