@@ -8,6 +8,7 @@ const changeLook = () => {
 }
 for (const hat of HATS) {
   const worn = hat.build()
+  const tilt = worn.rotation.z
   cub.model.wear(worn)
   for (let i = 0; i < 3; i++) {
     changeLook()
@@ -17,6 +18,7 @@ for (const hat of HATS) {
     const expected = fresh.scale.clone()
     cub.model.wear(worn)
     assert(worn.scale.distanceTo(expected) < 0.001, `${hat.id}: reused hat keeps the wrong size in ${cub.model.style}`)
+    assert(Math.abs(worn.rotation.z - tilt) < 0.001, `${hat.id}: ${cub.model.style} loses the hat’s original tilt`)
     assert(cub.model.root.getObjectById(worn.id), 'style swap must keep the hat attached')
   }
 }

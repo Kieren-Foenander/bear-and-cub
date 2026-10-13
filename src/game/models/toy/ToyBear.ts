@@ -106,7 +106,7 @@ export class ToyBear implements BearStyleModel {
     if (!hat) return
     const size = this.rig.dims.headSize
     hat.position.set(0, size[1] * 0.86, -size[2] * 0.08)
-    hat.rotation.set(-0.12, 0, 0)
+    hat.rotation.x = -0.12
     hat.scale.setScalar(size[0] / 0.46)
     hat.traverse((object) => {
       if (object instanceof THREE.Mesh) object.castShadow = true
