@@ -40,7 +40,7 @@ export class Bell {
     at: THREE.Vector3,
     onFirstRing: () => void,
     postsAlong: "x" | "z" = "x",
-    options: { note?: number; color?: THREE.ColorRepresentation; id?: string; coach?: boolean } = {}
+    options: { note?: number; color?: THREE.ColorRepresentation; id?: string; coach?: boolean; repeatCoach?: boolean } = {}
   ) {
     if (options.color !== undefined) {
       this.material.color.set(options.color)
@@ -109,7 +109,7 @@ export class Bell {
           this.material.emissiveIntensity = damp(this.material.emissiveIntensity, amount * 0.8, 12, 1 / 60)
         }
       },
-      options.coach === false ? undefined : { who: "cub", enabled: () => !this.rung }
+      options.coach === false ? undefined : { who: "cub", enabled: () => options.repeatCoach === true || !this.rung }
     )
   }
 
