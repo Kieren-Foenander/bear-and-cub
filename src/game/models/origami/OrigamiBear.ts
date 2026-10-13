@@ -268,10 +268,11 @@ export class OrigamiBear implements BearStyleModel {
     const arc = smooth((this.swipeTime - 0.03) / 0.1)
     p[P.FrontRight] = mix(p[P.FrontRight]!, mix(0.45, -2.7, arc), swipe)
     p[P.KneeFrontRight] = mix(p[P.KneeFrontRight]!, mix(0.3, -0.25, arc), swipe)
-    p[P.SplayFrontRight] = mix(p[P.SplayFrontRight]!, 0.3, swipe)
+    p[P.SplayFrontRight] = mix(p[P.SplayFrontRight]!, 0.55, swipe)
     p[P.LiftFrontRight] += swipe * arc * (cub ? 0.65 : 0.5)
     p[P.HeadPitch] -= swipe * 0.15
-    p[P.HeadYaw] += swipe * 0.15
+    p[P.HeadYaw] -= swipe * 0.1
+    p[P.HeadRoll] -= swipe * 0.12
     p[P.Roll] -= swipe * 0.12
     p[P.Pitch] -= swipe * 0.28
     p[P.Mouth] = Math.max(p[P.Mouth]!, swipe * 0.5)

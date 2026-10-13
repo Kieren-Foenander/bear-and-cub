@@ -358,7 +358,7 @@ export class OrigamiRig {
       ringY(0.08, w * 0.94, w * 0.96, w * 0.36),
       ringY(g + 0.11 * p, w * 1.1, w * 1.2, w * 0.45, 0, 0.045),
       ringY(g, w * 1.04, w * 1.14, w * 0.42, 0, 0.055)
-    ], (_, n) => n.y < -0.9 ? furDeep : fur, "end")
+    ], (_, n) => n.y < -0.9 ? furDeep : fur)
     // A paw print on each sole: one big pad and three toe beans, shown off by swipes and cheers.
     lower.place(0, g - 0.004, 0.055, Math.PI / 2)
     lower.disc(0, -w * 0.18, 0, w * 0.5, w * 0.38, pad, 6)
