@@ -13,6 +13,7 @@ for (const hat of HATS) {
   for (let i = 0; i < 3; i++) {
     changeLook()
     assert(mama.model.style === cub.model.style, 'pause Bear look should switch both bears')
+    assert(S.save.load().bearStyle === cub.model.style, 'Bear look should persist the style choice')
     const fresh = hat.build()
     cub.model.wear(fresh)
     const expected = fresh.scale.clone()

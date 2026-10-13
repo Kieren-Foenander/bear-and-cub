@@ -3,7 +3,7 @@
 # Usage: bash tools/playtest-qa.sh [port]
 set -euo pipefail
 port=${1:-5320}
-for test in qa-coaches:4 qa-pond-shortcut:3 qa-celebration:1 qa-recovery:1 qa-flow:0 qa-controls:1 qa-seesaw:4 qa-lift:5 qa-style-hats:9 qa-playground-seesaw:9 qa-acorn-platform-drop:8 woods:4; do
+for test in qa-coaches:4 qa-pond-shortcut:3 qa-celebration:1 qa-recovery:1 qa-flow:0 qa-controls:1 qa-seesaw:4 qa-lift:5 qa-style-hats:9 qa-playground-seesaw:9 qa-playground-bells:9 qa-acorn-platform-drop:8 qa-carrying:8 qa-chapter2-flow:0 qa-chapter2-recovery:6 qa-snowball:7 qa-music-themes:6 qa-style-gameplay:9 qa-style-routes:9 woods:4; do
   name=${test%%:*}
   level=${test##*:}
   url="http://localhost:$port/?manual"

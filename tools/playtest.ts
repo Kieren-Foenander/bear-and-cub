@@ -29,10 +29,15 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"]
 })
 const page = await browser.newPage({ viewport: { width: 1280, height: 760 } })
+const errors: Array<string> = []
 page.on("console", (m) => {
   if (m.type() === "error" || m.type() === "warning") console.log(`[page ${m.type()}]`, m.text())
+  if (m.type() === "error") errors.push(m.text())
 })
-page.on("pageerror", (e) => console.log("[page error]", e.message))
+page.on("pageerror", (e) => {
+  console.log("[page error]", e.message)
+  errors.push(e.message)
+})
 await page.exposeFunction("__shot", async (name: string) => {
   await new Promise((resolve) => setTimeout(resolve, 450))
   await page.screenshot({ path: `/tmp/shots/${name}.png` })
@@ -87,6 +92,7 @@ const jumpSwipe = () => { run(2, ['Space']); for (let i = 0; i < 80; i++) { if (
 `
 try {
   await page.evaluate(`(async () => { ${helpers}\n{\n${body}\n}\n })()`)
+  if (errors.length > 0) throw new Error(`browser errors: ${errors.join("; ")}`)
 } catch (error) {
   console.log("TEST FAILED:", (error as Error).message)
   await page.screenshot({ path: "/tmp/shots/failure.png" })

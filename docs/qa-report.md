@@ -103,3 +103,73 @@ Required suite: **✅ meadow · ✅ creek · ✅ pond · ✅ woods2 · ✅ mount
 Focused QA suite: all regressions and the full `woods.js` journey pass. The repaired Woods script now stops movement at its landing targets, hops onto the raised seesaw and explicitly fails if the level does not complete. Its previous overshoots were harness failures, not game softlocks.
 
 Screenshots and exploratory logs are temporary artifacts under `/tmp/shots/` and `/tmp/bears-qa-*.log`, not committed binary files. The QA Vite server remains on port 5320 for follow-up.
+
+## Round 2
+
+Tested 13 October 2026 exclusively in `/home/kieren/Projects/bears-qa2`, branch `feat/qa2`, on port **5340**. Round 1 fixes were treated as the baseline; its regression suite passes, including the revised lift waiting cue. No push or merge. The Round 2 server is stopped at the end of this pass.
+
+### Result
+
+All nine level playthroughs pass. Six gameplay/presentation issues were fixed, including one acorn-loss softlock. No remaining P1 was found in the tested routes and recovery scenarios. Origami, Toy and Classic were checked at the normal shared game camera, with all nine hats, carrying, throws, jump-swipes and celebration. Both alternate styles also complete the existing Night, Snow, Autumn and Playground journeys.
+
+### Fixed issues
+
+#### QA2-01 — An acorn dropped on hay or a stump disappears inside it
+
+- **Level:** 8, Autumn Orchard. **Severity:** P1 for a central drop. **Fixed:** yes.
+- **Repro:** lift Cub onto the hay, pick up its acorn, stand around `(-18, 14)` with feet at `3.2 m`, face south and press B to put it down. Wait four seconds. The acorn settles around `(-18, 0.39, 16.04)`, inside the solid stack. Cub cannot reach it from above; its central location is also beyond either bear's pickup range from the sides. Restarting loses the basket progress.
+- **Cause/fix:** falling items used terrain height alone. A downward Rapier query now also finds raised solid tops, ignores both bear capsules, and starts above the previous fall step to prevent tunneling. The acorn remains at the hay top plus its `0.3 m` clearance.
+- **Regression:** `qa-acorn-platform-drop.js` failed before the fix. It now drops and retrieves the hay acorn, then drops it on the taller stump. The normal physical Orchard route still completes; `qa-carrying.js` covers ordinary ground drops and delivery.
+
+#### QA2-02 — Switching away from Toy leaves hats enlarged
+
+- **Level:** shared bear models / pause menu. **Severity:** P3. **Fixed:** yes.
+- **Repro:** equip any hat, pause, choose Bear look twice: Origami → Toy → Classic. Toy fits hats at about `1.48×` scale for Cub; Classic and Origami inherited that scale rather than their normal `1×` fit.
+- **Fix:** restore the normal hat scale when either of those styles fits it. `qa-style-hats.js` cycles every hat through the real pause menu and compares a reused hat with a fresh one. It also checks attachment, both bears switching and save persistence.
+
+#### QA2-03 — Toy removes the party hat's sideways tilt
+
+- **Level:** shared bear models; Playground reward. **Severity:** P3. **Fixed:** yes.
+- **Repro:** wear the party hat and select Toy. Its built-in `0.25 rad` sideways tilt becomes zero and stays zero after switching back.
+- **Fix:** adjust the wearing pitch without overwriting the other rotation axes. The hat regression now verifies the original tilt throughout all style switches.
+
+#### QA2-04 — Playground's seesaw gives incomplete instructions
+
+- **Level:** 9, Bear Playground. **Severity:** P2. **Fixed:** yes.
+- **Repro:** approach the pink end on foot. The raised board stops Cub while the prompt says “Stand on pink!”. After Cub gets on, “Wait for Mama!” appears, but Mama has no prompt explaining the required blue-end jump.
+- **Fix:** give Cub “Jump onto pink!” with A, and give Mama “Jump on blue!” while Cub is ready. `qa-playground-seesaw.js` physically approaches the board, follows both jump instructions and lands Cub in the treehouse. Both symptoms failed their assertions before their fixes.
+
+#### QA2-05 — Musical bells stop coaching after one ring
+
+- **Level:** 9, Bear Playground. **Severity:** P2. **Fixed:** yes.
+- **Repro:** jump-swipe any musical bell, land, then stay beside it. Its jump/timing prompt disappears permanently although it remains playable.
+- **Fix:** opt the Playground bells into repeat coaching. Puzzle bells retain their existing behavior. `qa-playground-bells.js` failed on the second attempt before the fix; it now rings all six bells twice using the visible timing cue and checks the actual tuned-note sequence `-1, 1, 3, 5, 7, 9` on both repetitions.
+
+### Open issues, ranked
+
+#### QA2-06 — Two “Put down” prompts overlap when Cub holds an acorn on Mama
+
+- **Level:** 8, Autumn Orchard / shared carrying. **Severity:** P2, highest remaining usability concern. **Fixed:** no; prompt layout and action naming need a design choice.
+- **Repro:** swipe the oak acorn down, pick it up as Cub, then have Mama pick up Cub. With both characters centered in the shared camera, their blue/pink B prompts overlap vertically and both say “Put down”. The active bear determines whether B releases Cub or drops the acorn, but the prompts do not name that distinction. Screenshot: `/tmp/shots/qa2-acorn-back.png`.
+- **Suggestion:** distinguish “Cub down” and “Acorn down”; trial a minimum **60 px** separation between projected prompt cards, or offset their anchors **0.8 m** to opposite sides. Check keyboard, one-controller switching and two-controller play before choosing the layout. Carrying, throws, delivery and restart remain recoverable.
+
+#### QA2-07 — Neighboring thin floes can keep Mama supported indefinitely
+
+- **Level:** 7, Snowy Slopes. **Severity:** P3, rule consistency. **Fixed:** no; changing support detection or floe arrangement is broader than a small QA fix.
+- **Repro:** keep Cub away from the approach (e.g. `(-5, 3.5)`), walk Mama from `(2, 2.6)` toward `(3.5, -1.9)`, release the stick and wait **30 seconds**. Mama remains around `(2.65, -1.9)`, feet near **`-0.43 m`**, on the adjoining floe edges instead of falling in. A separate center landing at `(3.5, -1.9)` also survives 30 seconds. Screenshot: `/tmp/shots/qa2-mama-thin-ice-wait.png`.
+- **Evidence:** floes are **3.1 m** wide and centers are **2.2 m** apart along z, with lateral offsets. Mama's **0.7 m** capsule can be supported by a neighboring collider while the center ground ray assigns her weight to another floe. Their sinking behavior therefore does not reliably enforce “too thin for Mama”. No unsafe checkpoint or progression softlock was observed; falling into exposed water respawns her locally.
+- **Suggestion:** account for Mama's overlap with each floe's footprint (half-width **`1.55 + 0.70 m`**, feet within **0.5 m** above its top) and trial a **0.8–1.0 s** heavy-load latch through brief contact gaps. Preserve the broad floes and Cub's safety; shrinking them would make the child's task harder. Test this with Cub beside/on Mama before adopting it.
+
+### Coverage and limits
+
+- **Night:** all three coached lantern swipes, glowing stones with both bears, lift, owl boop and ladder, island throw, moon-flower swipe, pads and finale. A glowing stone never replaces the bank checkpoint; a splash returns Cub locally. Fireflies and the owl/lantern changes were inspected in the gameplay captures.
+- **Snow:** rink berries, all floes with Cub, bell and Mama's bridge, snowball and cabin. Cub can linger safely on a floe; both bears recover from exposed water. Sampled coast after releasing movement: about **1.36 m on ice**, **0.35–0.38 m on snow**, and **0.38 m in Orchard**, confirming traction resets on level changes. Sustained snowball pushes take **6.82 s Mama alone**, **6.90 s Cub alone**, **3.83 s together** in the tested setups. Snowfall renders without invalid positions or browser errors.
+- **Orchard:** the complete physical three-acorn route, super bounce, jump-swipe, Squirrel's responses, basket count, gate and honey; both bear pickups, ground/platform drops, repeated delivery button, ledge fall, Cub holding an acorn while carried/thrown, and pause-menu restart while Mama carries both Cub and the last acorn. Restart clears the carried state and restores all items and basket progress. Orchard has no playable water: water behavior was checked using a real `Carrying` instance and B interactions added to Night, stepping its update with the stage; Cub's splash and Mama splashing with Cub on her back retain the held item.
+- **Playground:** all musical bells twice, physical seesaw jump/launch, shared mushroom/pond/stream systems through their existing regressions and playground route, repeat play and honey completion. The existing Playground journey uses setup placements for the seesaw and honey; it is not an entirely physical park exploration route.
+- **Art:** screenshots for walking, airborne swipe, back riding, airborne throw and celebration in all three styles; live switches while carried; all **27 style/hat combinations** visually inspected. After the fixes, no missing body parts, conspicuous floating hats, ground penetration or broken pose was found in the sampled normal-camera views. Camera distance makes small facial/hat details hard to assess. Style switches intentionally change appearance; animation poses can ease in after switching. This is sampled inspection, not exhaustive frame-by-frame proof against all popping.
+- **Flow/audio:** chapter 2 prerequisites, Playground after Meadow, new hats and auto-equipping/save, both finale credit screens and map returns, restart and music mute. New themes select correctly in the real session. Six seconds of each new theme were also rendered through the actual music engine and synth with `OfflineAudioContext`: finite, non-silent samples, peaks below **0.044**, no clipping. This checks generated audio, not subjective musical quality.
+- **Harness:** browser console errors and uncaught exceptions now fail playtests; the all-level shell runner now honors the harness exit code instead of accepting an earlier “done” line after a later failure. Temporary test-setup errors (including using `placeAt` to simulate a splash and its deliberate checkpoint reset) were corrected, not reported as gameplay bugs.
+
+Physical controllers and a preschool player were not available. Ice steering and super-bounce learning still need that child trial; script success cannot establish that they are fun or frustration-free. No new child-facing timing was tightened in this pass.
+
+Final checks: `bun run build`, `bash tools/playtest-all.sh 5340`, and `bash tools/playtest-qa.sh 5340`. All nine normal routes, eight alternate-style chapter 2 routes and the expanded QA suite pass. Screenshots and logs remain temporary under `/tmp/shots/` and `/tmp/bears-qa2-*.log`; no binary artifacts are committed.
