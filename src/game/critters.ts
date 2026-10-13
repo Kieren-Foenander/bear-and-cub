@@ -338,3 +338,80 @@ export class Squirrel {
     this.group.rotation.z = Math.sin(this.time * 2) * 0.03
   }
 }
+
+/** A little red crab that scuttles sideways back and forth along a line. */
+export class Crab {
+  readonly group = new THREE.Group()
+  private readonly legs: Array<THREE.Mesh> = []
+  private readonly claws: Array<THREE.Group> = []
+  private time: number
+  readonly position = new THREE.Vector3()
+
+  constructor(
+    scene: THREE.Scene,
+    private readonly from: THREE.Vector3,
+    private readonly to: THREE.Vector3,
+    private readonly period: number,
+    phase: number
+  ) {
+    this.time = phase * period
+    const shell = flat("#e5484d")
+    const body = mesh(new THREE.SphereGeometry(0.45, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), shell)
+    body.scale.set(1.2, 0.7, 0.9)
+    body.position.y = 0.25
+    this.group.add(body)
+    for (const side of [-1, 1]) {
+      const stalk = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.25, 4), shell)
+      stalk.position.set(side * 0.15, 0.6, 0.25)
+      const eye = mesh(new THREE.IcosahedronGeometry(0.08, 1), flat("#ffffff"))
+      eye.position.set(side * 0.15, 0.75, 0.27)
+      const pupil = mesh(new THREE.IcosahedronGeometry(0.04, 0), flat("#1e1a18"))
+      pupil.position.set(side * 0.15, 0.76, 0.34)
+      this.group.add(stalk, eye, pupil)
+      const claw = new THREE.Group()
+      const arm = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.35, 4), shell)
+      arm.rotation.z = side * 0.9
+      arm.position.set(side * 0.12, 0.05, 0)
+      const pincer = mesh(new THREE.IcosahedronGeometry(0.14, 0), shell)
+      pincer.scale.set(1, 0.7, 1.3)
+      pincer.position.set(side * 0.28, 0.18, 0.1)
+      claw.add(arm, pincer)
+      claw.position.set(side * 0.45, 0.3, 0.2)
+      this.claws.push(claw)
+      this.group.add(claw)
+      for (let i = 0; i < 3; i++) {
+        const leg = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 4), shell)
+        leg.position.set(side * 0.5, 0.12, -0.2 + i * 0.2)
+        leg.rotation.z = side * 1.1
+        this.legs.push(leg)
+        this.group.add(leg)
+      }
+    }
+    this.group.scale.setScalar(1.3)
+    scene.add(this.group)
+    this.update(0)
+  }
+
+  private readonly ahead = new THREE.Vector3()
+
+  /** Where the crab will be `seconds` from now (for the "Wait… GO!" coach). */
+  positionAt(seconds: number) {
+    const s = Math.max(-1, Math.min(1, Math.sin(((this.time + seconds) / this.period) * Math.PI * 2) * 1.4))
+    return this.ahead.lerpVectors(this.from, this.to, s * 0.5 + 0.5)
+  }
+
+  update(dt: number) {
+    this.time += dt
+    // Back and forth with a little pause at each end.
+    const s = Math.max(-1, Math.min(1, Math.sin((this.time / this.period) * Math.PI * 2) * 1.4))
+    this.position.lerpVectors(this.from, this.to, s * 0.5 + 0.5)
+    this.group.position.copy(this.position)
+    const moving = Math.abs(Math.cos((this.time / this.period) * Math.PI * 2)) > 0.3
+    this.legs.forEach((leg, i) => {
+      leg.rotation.x = moving ? Math.sin(this.time * 20 + i) * 0.4 : 0
+    })
+    for (const [i, claw] of this.claws.entries()) claw.rotation.x = Math.sin(this.time * 4 + i) * 0.3
+    // Always faces the camera side (crabs walk sideways!).
+    this.group.rotation.y = 0
+  }
+}

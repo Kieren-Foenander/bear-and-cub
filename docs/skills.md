@@ -19,6 +19,8 @@ a skill young players need yet. Pressing the right button at the right moment is
 | 9 | Gentle steering (small stick movements) | Snowy Slopes (L7): slippery ice rink, thin ice floes | ✅ |
 | 10 | Holding a direction (sustained push) | Snowy Slopes (L7): pushing the giant snowball, ideally together | ✅ |
 | 11 | Sequencing: grab, carry, put down | Autumn Orchard (L8): golden acorns to Squirrel's basket | ✅ |
+| 12 | Patience: wait, then go | Sunny Beach (L9): crab crossing with a "Wait… GO!" coach | ✅ |
+| 0 | Finding every button | Button practice (Y on the map) | ✅ |
 
 ## Coaches
 

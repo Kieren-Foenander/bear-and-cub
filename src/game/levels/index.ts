@@ -1,4 +1,5 @@
 import { autumn } from "./autumn.ts"
+import { beach } from "./beach.ts"
 import { creek } from "./creek.ts"
 import { meadow } from "./meadow.ts"
 import { mountain } from "./mountain.ts"
@@ -10,4 +11,4 @@ import { woods } from "./woods.ts"
 import type { LevelDef } from "./types.ts"
 
 /** The adventure, in order. Each level teaches one new controller skill (see docs/skills.md). */
-export const LEVELS: ReadonlyArray<LevelDef> = [meadow, creek, pond, woods, mountain, night, snow, autumn, playground]
+export const LEVELS: ReadonlyArray<LevelDef> = [meadow, creek, pond, woods, mountain, night, snow, autumn, beach, playground]

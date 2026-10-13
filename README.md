@@ -33,6 +33,9 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
 - **Bear hug:** stand close and both roar (B) at the same time. ❤️
 - **Name Cub:** press **N** on the title screen and type your little one's name. The game uses it
   everywhere ("Lily: jump and swipe an apple!").
+- **Button practice:** press **Y** on the level map. A big button appears ("Press the green A!"),
+  press it to grow a flower. Goes through every button and stick direction: a gentle way to learn
+  the controller.
 - **Hats:** every level you finish unlocks a hat for Cub. Press ▲ / ▼ on the map to try them on.
 - Controllers **rumble** on hits, bounces, splashes and hugs (where the browser supports it).
 - **Music:** gentle procedural tunes for the menus and every level, with birdsong, water, crickets
@@ -42,7 +45,7 @@ Plug in one or two controllers (Xbox / PlayStation / most others work via the Ga
 
 ## The adventure
 
-Eight adventure levels (five in chapter 1, three in chapter 2), each teaching a controller skill (see [docs/skills.md](docs/skills.md)),
+Nine adventure levels (five in chapter 1, three in chapter 2, and chapter 3 begins), each teaching a controller skill (see [docs/skills.md](docs/skills.md)),
 plus a free-play park.
 Every level ends with both bears reaching the honey pot. Berries and butterflies are
 hidden everywhere for little explorers, and the level map remembers your best.
@@ -57,6 +60,7 @@ hidden everywhere for little explorers, and the level map remembers your best.
 | 6 | 🌙 Firefly Night (chapter 2) | Light the lanterns | Swipe three lanterns to raise glowing stones · lift Cub up the ridge to boop a sleepy owl (rope ladder for Mama) · throw Cub to the moon-pond island to swipe the moon flower |
 | 7 | ❄️ Snowy Slopes (chapter 2) | Steering gently on slippery ice | Ice rink · thin ice floes that crack under Mama · bell → snow bridge · push a giant snowball into a crack (together is faster) |
 | 8 | 🍂 Autumn Orchard (chapter 2 finale) | Pick up, carry and put down | Bring Squirrel three golden acorns: one on a hay stack (Mama lifts Cub), one on a stump (super bounce), one hanging in an oak (jump-swipe) · leaf piles to run through |
+| 9 | 🏖️ Sunny Beach (chapter 3) | Wait for it… then GO! | Crab crossing with a "Wait… GO!" coach · beach-ball football (B to kick) · Mama lifts Cub up the lighthouse rock to ring the bell · sail to Honey Island |
 | ★ | 🎪 Bear Playground | Free play (opens after level 1) | Mushroom trampolines, musical bells, lily pond, seesaw up to a treehouse, a stream for running jumps |
 
 ## How it's built

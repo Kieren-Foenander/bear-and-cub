@@ -47,7 +47,8 @@ export class Bell {
       this.material.emissive.set(options.color)
     }
     const { scene, rapier, world, swipes } = ctx
-    const ground = ctx.terrain.heightAt(at.x, at.z)
+    // Stand on whatever is higher: the ground, or the rock/ledge we were placed on.
+    const ground = Math.max(ctx.terrain.heightAt(at.x, at.z), at.y)
     const target = new THREE.Vector3(at.x, ground + hangHeight(CUB, 1.65), at.z)
     const barY = ground + 3.6
 

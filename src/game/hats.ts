@@ -142,6 +142,17 @@ const acornCap = () => {
   return group
 }
 
+const sunhat = () => {
+  const group = new THREE.Group()
+  const brim = mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.04, 16), flat("#f2d27a"))
+  const crown = mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.26, 12), flat("#f2d27a"))
+  crown.position.y = 0.14
+  const ribbon = mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.07, 12), flat("#ff6fa8"))
+  ribbon.position.y = 0.06
+  group.add(brim, crown, ribbon)
+  return group
+}
+
 export const HATS: ReadonlyArray<Hat> = [
   { id: "flowers", name: "Flower crown", emoji: "🌸", unlockedBy: "meadow", build: flowerCrown },
   { id: "sailor", name: "Sailor hat", emoji: "⛵", unlockedBy: "creek", build: sailorHat },
@@ -151,6 +162,7 @@ export const HATS: ReadonlyArray<Hat> = [
   { id: "nightcap", name: "Sleepy nightcap", emoji: "🌙", unlockedBy: "night", build: nightcap },
   { id: "beanie", name: "Bobble beanie", emoji: "❄️", unlockedBy: "snow", build: beanie },
   { id: "acorn", name: "Acorn cap", emoji: "🌰", unlockedBy: "autumn", build: acornCap },
+  { id: "sunhat", name: "Sun hat", emoji: "👒", unlockedBy: "beach", build: sunhat },
   { id: "party", name: "Party hat", emoji: "🥳", unlockedBy: "playground", build: partyHat }
 ]
 

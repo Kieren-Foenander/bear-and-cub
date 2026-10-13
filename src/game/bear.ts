@@ -231,7 +231,8 @@ export class Bear {
 
     const desired = { x: this.velocity.x * dt, y: this.velocity.y * dt, z: this.velocity.z * dt }
     // Ride along with moving platforms.
-    if (this.grounded && this.surfaceBelow?.kind === "platform") {
+    // (A tiny gap counts too: a bobbing boat shouldn't shake off a little bear.)
+    if (this.surfaceBelow?.kind === "platform" && (this.grounded || (this.groundGap < 0.25 && this.velocity.y <= 0.5))) {
       desired.x += this.surfaceBelow.delta.x
       desired.y += Math.min(0, this.surfaceBelow.delta.y)
       desired.z += this.surfaceBelow.delta.z
