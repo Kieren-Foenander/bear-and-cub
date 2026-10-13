@@ -69,10 +69,10 @@ export const autumn: LevelDef = {
     color: (x, z, y) => (y > -0.1 && y < 0.6 && Math.abs(x - 1.3 * Math.sin(z * 0.16)) < 1.4 && z < 30 ? "#a8794a" : null)
   },
   build: (api) => {
-    const { scene, mama, cub, coop, berries, particles, sound, toast, interactions, surfaces, terrain } = api
+    const { scene, mama, cub, coop, berries, particles, sound, toast, interactions, surfaces, terrain, rapier, world } = api
     const at = (x: number, z: number) => new THREE.Vector3(x, height(x, z), z)
     const updates: Array<(dt: number) => void> = []
-    const carrying = new Carrying(interactions, [mama, cub], terrain, particles, sound)
+    const carrying = new Carrying(interactions, [mama, cub], terrain, particles, sound, rapier, world)
     updates.push((dt) => carrying.update(dt))
 
     // --- Squirrel, the big oak and the basket. ---

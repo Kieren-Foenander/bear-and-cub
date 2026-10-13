@@ -94,7 +94,7 @@ export const playground: LevelDef = {
     const rainbow = ["#ff6b6b", "#ffb347", "#ffe066", "#8fe388", "#6fc3ff", "#c38bff"]
     const bells = rainbow.map(
       (color, i) =>
-        new Bell(api, at(13 + i * 4, 12), () => {}, "x", { note: i * 2 - 1, color, id: `music-bell-${i}` })
+        new Bell(api, at(13 + i * 4, 12), () => {}, "x", { note: i * 2 - 1, color, id: `music-bell-${i}`, repeatCoach: true })
     )
     updates.push((dt) => {
       for (const bell of bells) bell.update(dt)
@@ -181,7 +181,18 @@ export const playground: LevelDef = {
       inRange: (bear) => bear.position.distanceTo(seesaw.endA) < 4,
       enabled: () => true,
       view: (bear) =>
-        seesaw.sideOf(bear.position.clone().setY(bear.feetY)) === -1 ? { buttons: [], label: "Wait for Mama!" } : { buttons: ["move"], label: "Stand on pink!" }
+        seesaw.sideOf(bear.position.clone().setY(bear.feetY)) === -1 ? { buttons: [], label: "Wait for Mama!" } : { buttons: ["a"], label: "Jump onto pink!" }
+    })
+    interactions.add({
+      id: "seesaw-mama-playground",
+      who: "mama",
+      kind: "guide",
+      buttons: [],
+      label: "",
+      anchor: () => seesaw.endB.clone().add(new THREE.Vector3(0, 2.6, 0)),
+      inRange: (bear) => bear.position.distanceTo(seesaw.endB) < 5,
+      enabled: () => seesaw.sideOf(cub.position.clone().setY(cub.feetY)) === -1,
+      view: () => ({ buttons: ["a"], label: "Jump on blue!" })
     })
     updates.push((dt) => {
       seesaw.update(dt)
