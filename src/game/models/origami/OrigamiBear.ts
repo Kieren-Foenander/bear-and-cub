@@ -179,14 +179,13 @@ export class OrigamiBear implements BearStyleModel {
     }
 
     // Sitting: the rump drops, hind paws scoot forward, front paws stay straight and tidy.
-    const sitting = Math.max(this.sit, this.carried)
-    p[P.Y] -= this.sit * (cub ? 0.2 : 0.24)
+    p[P.Y] -= this.sit * (cub ? 0.18 : 0.27)
     p[P.Pitch] = mix(p[P.Pitch]!, -0.42, this.sit)
     p[P.HeadPitch] += this.sit * 0.36
     for (let i = 0; i < 4; i++) {
       const front = i < 2
-      p[P.FrontLeft + i] = mix(p[P.FrontLeft + i]!, front ? 0.42 : -1.15, this.sit)
-      p[P.KneeFrontLeft + i] = mix(p[P.KneeFrontLeft + i]!, front ? 0 : 0.72, this.sit)
+      p[P.FrontLeft + i] = mix(p[P.FrontLeft + i]!, front ? 0.42 : (cub ? -0.8 : -1.0), this.sit)
+      p[P.KneeFrontLeft + i] = mix(p[P.KneeFrontLeft + i]!, front ? 0 : (cub ? 0.3 : 0.55), this.sit)
       p[P.SplayFrontLeft + i] = mix(p[P.SplayFrontLeft + i]!, (i % 2 === 0 ? -1 : 1) * (front ? 0.06 : 0.22), this.sit)
     }
 
@@ -201,12 +200,11 @@ export class OrigamiBear implements BearStyleModel {
       const front = i < 2
       const side = i % 2 === 0 ? -1 : 1
       const kick = Math.sin(t * (front ? 6 : 5) + (side > 0 ? Math.PI : 0) + (front ? 0.6 : 0))
-      p[P.FrontLeft + i] = mix(p[P.FrontLeft + i]!, front ? -0.55 + kick * 0.25 : -1.2 + kick * 0.3, carried)
-      p[P.KneeFrontLeft + i] = mix(p[P.KneeFrontLeft + i]!, front ? -0.2 : 0.4 + kick * 0.25, carried)
-      p[P.SplayFrontLeft + i] = mix(p[P.SplayFrontLeft + i]!, side * (front ? 0.45 : 0.75), carried)
+      p[P.FrontLeft + i] = mix(p[P.FrontLeft + i]!, front ? -0.55 + kick * 0.25 : -0.55 + kick * 0.3, carried)
+      p[P.KneeFrontLeft + i] = mix(p[P.KneeFrontLeft + i]!, front ? -0.2 : 0.35 + kick * 0.3, carried)
+      p[P.SplayFrontLeft + i] = mix(p[P.SplayFrontLeft + i]!, side * (front ? 0.45 : 1.0), carried)
     }
     p[P.Scarf] += carried * 0.2
-    void sitting
 
     // Cub's sleepy yawn after settling, with no extra timer.
     const yawn = cub ? envelope(this.idleTime - 10, 2.3, 0.5, 0.7) : 0
@@ -271,7 +269,7 @@ export class OrigamiBear implements BearStyleModel {
     p[P.FrontRight] = mix(p[P.FrontRight]!, mix(0.45, -2.7, arc), swipe)
     p[P.KneeFrontRight] = mix(p[P.KneeFrontRight]!, mix(0.3, -0.25, arc), swipe)
     p[P.SplayFrontRight] = mix(p[P.SplayFrontRight]!, 0.3, swipe)
-    p[P.LiftFrontRight] += swipe * arc * (cub ? 0.55 : 0.5)
+    p[P.LiftFrontRight] += swipe * arc * (cub ? 0.65 : 0.5)
     p[P.HeadPitch] -= swipe * 0.15
     p[P.HeadYaw] += swipe * 0.15
     p[P.Roll] -= swipe * 0.12

@@ -2,6 +2,8 @@ import * as THREE from "three"
 
 /** A flat colour, or one picked per facet from its part-local centre and outward normal. */
 export type Paint = THREE.Color | ((centre: THREE.Vector3, normal: THREE.Vector3) => THREE.Color)
+/** Which ends of a loft get a lid; hidden ends (inside another part) are left open to save triangles. */
+export type Caps = "both" | "start" | "end" | "none"
 
 const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z)
 
@@ -67,7 +69,7 @@ export class Sculpt {
    * Skins matching rings (same point count, edges kept parallel) into planar quads and caps both
    * ends. Rings built by `ringX/Y/Z` or `outline` always give flat facets.
    */
-  loft(rings: readonly (readonly THREE.Vector3[])[], paint: Paint, caps = true): this {
+  loft(rings: readonly (readonly THREE.Vector3[])[], paint: Paint, caps: Caps = "both"): this {
     const inside = new THREE.Vector3()
     let count = 0
     for (const ring of rings) for (const p of ring) { inside.add(p); count++ }
@@ -83,38 +85,45 @@ export class Sculpt {
         if (unique.length >= 3) this.face(unique, paint, inside)
       }
     }
-    if (caps) {
-      this.face(rings[0]!, paint, inside)
-      this.face(rings[rings.length - 1]!, paint, inside)
-    }
+    if (caps === "both" || caps === "start") this.face(rings[0]!, paint, inside)
+    if (caps === "both" || caps === "end") this.face(rings[rings.length - 1]!, paint, inside)
     return this
   }
 
-  /** A flat outline (in XY) extruded along Z from z0 to z1, with bevelled front and back. */
-  slab(outline: readonly (readonly [number, number])[], z0: number, z1: number, bevel: number, paint: Paint): this {
-    const inset = (scale: number, z: number) => {
-      let cx = 0
-      let cy = 0
-      for (const [x, y] of outline) { cx += x; cy += y }
-      cx /= outline.length
-      cy /= outline.length
-      return outline.map(([x, y]) => v(cx + (x - cx) * scale, cy + (y - cy) * scale, z))
-    }
-    const depth = z1 - z0
-    return this.loft([inset(1 - bevel, z0), inset(1, z0 + depth * 0.3), inset(1, z1 - depth * 0.4), inset(1 - bevel, z1)], paint)
+  /**
+   * A flat outline (in XY) extruded along Z from z0 to z1 with a bevelled front. Closed slabs are
+   * free-standing (ears); open ones sit embedded in a surface, so only the bevel and front show.
+   */
+  slab(outline: readonly (readonly [number, number])[], z0: number, z1: number, bevel: number, paint: Paint, closed = true): this {
+    let cx = 0
+    let cy = 0
+    for (const [x, y] of outline) { cx += x; cy += y }
+    cx /= outline.length
+    cy /= outline.length
+    const inset = (scale: number, z: number) => outline.map(([x, y]) => v(cx + (x - cx) * scale, cy + (y - cy) * scale, z))
+    return closed
+      ? this.loft([inset(1, z0), inset(1, z1 - (z1 - z0) * 0.4), inset(1 - bevel, z1)], paint)
+      : this.loft([inset(1, z0), inset(1 - bevel, z1)], paint, "end")
   }
 
-  /** A low faceted button (eye, nose, blush) facing +Z, its back at z. */
+  /** A low faceted button (eye, petal heart) facing +Z, its open back embedded at z. */
   dot(x: number, y: number, z: number, rx: number, ry: number, depth: number, paint: Paint, sides = 8, crown = 0.62): this {
-    const ring = (scale: number, dz: number) => {
-      const points: THREE.Vector3[] = []
-      for (let i = 0; i < sides; i++) {
-        const angle = (i + 0.5) / sides * Math.PI * 2
-        points.push(v(x + Math.cos(angle) * rx * scale, y + Math.sin(angle) * ry * scale, z + dz))
-      }
-      return points
-    }
-    return this.loft([ring(1, 0), ring(1, depth * 0.45), ring(crown, depth)], paint)
+    return this.loft([ellipse(x, y, z, rx, ry, sides), ellipse(x, y, z + depth, rx * crown, ry * crown, sides)], paint, "end")
+  }
+
+  /** A single flat facet facing +Z (blush, pads, glints): the cheapest possible detail. */
+  decal(points: readonly (readonly [number, number])[], z: number, paint: Paint): this {
+    const face = points.map(([x, y]) => v(x, y, z))
+    let cx = 0
+    let cy = 0
+    for (const [x, y] of points) { cx += x; cy += y }
+    this.face(face, paint, v(cx / points.length, cy / points.length, z - 1))
+    return this
+  }
+
+  /** A flat ellipse facet facing +Z. */
+  disc(x: number, y: number, z: number, rx: number, ry: number, paint: Paint, sides = 6): this {
+    return this.decal(ellipse(x, y, z, rx, ry, sides).map(p => [p.x, p.y] as const), z, paint)
   }
 
   get empty(): boolean { return this.positions.length === 0 }
@@ -129,6 +138,23 @@ export class Sculpt {
     return geometry
   }
 }
+
+const ellipse = (x: number, y: number, z: number, rx: number, ry: number, sides: number): THREE.Vector3[] => {
+  const points: THREE.Vector3[] = []
+  for (let i = 0; i < sides; i++) {
+    const angle = (i + 0.5) / sides * Math.PI * 2
+    points.push(v(x + Math.cos(angle) * rx, y + Math.sin(angle) * ry, z))
+  }
+  return points
+}
+
+/** A plain rectangle in the XZ plane at height y, for thin strips. */
+export const rectY = (y: number, hw: number, hd: number, cx = 0, cz = 0): THREE.Vector3[] =>
+  [v(cx + hw, y, cz + hd), v(cx + hw, y, cz - hd), v(cx - hw, y, cz - hd), v(cx - hw, y, cz + hd)]
+
+/** A plain rectangle in the XY plane at depth z, for thin strips. */
+export const rectZ = (z: number, hw: number, hh: number, cx = 0, cy = 0): THREE.Vector3[] =>
+  [v(cx + hw, cy + hh, z), v(cx + hw, cy - hh, z), v(cx - hw, cy - hh, z), v(cx - hw, cy + hh, z)]
 
 /** A chamfered rectangle (octagon) in the XZ plane at height y. Absolute chamfers keep facets planar. */
 export const ringY = (y: number, hw: number, hd: number, c: number, cx = 0, cz = 0): THREE.Vector3[] => {
